@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PocketMate
 
-## Getting Started
+Personal/family finance MVP built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS + shadcn/ui**, and **Supabase**.
 
-First, run the development server:
+## Stack
+- Next.js 14+ (App Router)
+- TypeScript, ESLint (flat config)
+- Tailwind CSS 3.4 + shadcn/ui
+- Supabase (PostgreSQL + Auth)
+- React Hook Form + Zod (to be added with auth flows)
+- TanStack Query (Phase 2)
 
+## Getting started
+1) Install dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Configure environment
+```bash
+cp .env.local.example .env.local
+# Fill in Supabase keys from your project
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3) Run the app
+```bash
+npm run dev
+```
+Visit http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Supabase setup (Phase 1.2)
+1) Create a Supabase project and copy:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only)
 
-## Learn More
+2) Apply schema and RLS policies (see `docs/database-schema.md`):
+```bash
+# Using Supabase CLI (recommended)
+supabase db execute --db-url "$SUPABASE_DB_URL" --file supabase/schema.sql
+```
+Or paste `supabase/schema.sql` into the Supabase SQL editor.
 
-To learn more about Next.js, take a look at the following resources:
+3) Seed default categories:
+```bash
+supabase db execute --db-url "$SUPABASE_DB_URL" --file supabase/seed.sql
+```
+Alternatively, run the seed script in the SQL editor.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4) Generate types (optional, once Supabase CLI is connected):
+```bash
+supabase gen types typescript --project-id <project-id> --schema public > types/database.types.ts
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project structure
+- `app/` – App Router routes, layouts, and pages
+- `components/ui/` – shadcn/ui components (Button scaffolded)
+- `lib/` – shared utilities (`supabase`, `utils`)
+- `types/` – TypeScript types (`database.types.ts`)
+- `supabase/` – schema and seed SQL files
+- `docs/` – requirements, database schema, API design
+- `TODO.md` – sprint plan (Phase 1.1 & 1.2)
 
-## Deploy on Vercel
+## NPM scripts
+- `npm run dev` – start dev server
+- `npm run build` – production build
+- `npm run start` – run built app
+- `npm run lint` – run ESLint
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Next steps (per TODO.md)
+- Finish Supabase wiring (envs + schema + seeds)
+- Implement auth flows (FR-AUTH-001/002/003)
+- Protect routes via middleware
+- Build dashboard skeleton (layout, navigation, placeholders)
