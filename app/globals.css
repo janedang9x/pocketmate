@@ -71,7 +71,11 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI",
+    font-family:
+      var(--font-geist-sans),
+      system-ui,
+      -apple-system,
+      "Segoe UI",
       sans-serif;
   }
 }

@@ -26,16 +26,17 @@ counterparty (1) ──────< transaction (N)
 
 Stores user authentication and profile information.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique identifier |
-| user_name | VARCHAR(100) | UNIQUE, NOT NULL | Username for login |
-| password | VARCHAR(255) | NOT NULL | Hashed password |
-| is_active | BOOLEAN | DEFAULT TRUE | Account status |
-| created_at | TIMESTAMP | DEFAULT NOW() | Account creation timestamp |
-| updated_at | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
+| Column     | Type         | Constraints      | Description                |
+| ---------- | ------------ | ---------------- | -------------------------- |
+| id         | UUID         | PRIMARY KEY      | Unique identifier          |
+| user_name  | VARCHAR(100) | UNIQUE, NOT NULL | Username for login         |
+| password   | VARCHAR(255) | NOT NULL         | Hashed password            |
+| is_active  | BOOLEAN      | DEFAULT TRUE     | Account status             |
+| created_at | TIMESTAMP    | DEFAULT NOW()    | Account creation timestamp |
+| updated_at | TIMESTAMP    | DEFAULT NOW()    | Last update timestamp      |
 
 **Indexes:**
+
 - PRIMARY KEY on `id`
 - UNIQUE on `user_name`
 
@@ -45,21 +46,23 @@ Stores user authentication and profile information.
 
 Stores financial accounts (bank, credit card, cash, e-wallet).
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique identifier |
-| user_id | UUID | FOREIGN KEY, NOT NULL | References user_account(id) |
-| type | VARCHAR(50) | NOT NULL, CHECK | Bank Account, Credit Card, E-wallet, Cash |
-| name | VARCHAR(200) | NOT NULL | Account name |
-| currency | VARCHAR(10) | NOT NULL | Currency code (VND, USD, EUR, etc.) |
-| created_at | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
-| updated_at | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
+| Column     | Type         | Constraints           | Description                               |
+| ---------- | ------------ | --------------------- | ----------------------------------------- |
+| id         | UUID         | PRIMARY KEY           | Unique identifier                         |
+| user_id    | UUID         | FOREIGN KEY, NOT NULL | References user_account(id)               |
+| type       | VARCHAR(50)  | NOT NULL, CHECK       | Bank Account, Credit Card, E-wallet, Cash |
+| name       | VARCHAR(200) | NOT NULL              | Account name                              |
+| currency   | VARCHAR(10)  | NOT NULL              | Currency code (VND, USD, EUR, etc.)       |
+| created_at | TIMESTAMP    | DEFAULT NOW()         | Creation timestamp                        |
+| updated_at | TIMESTAMP    | DEFAULT NOW()         | Last update timestamp                     |
 
 **Indexes:**
+
 - PRIMARY KEY on `id`
 - INDEX on `user_id`
 
 **Constraints:**
+
 - CHECK (type IN ('Bank Account', 'Credit Card', 'E-wallet', 'Cash'))
 - FOREIGN KEY (user_id) REFERENCES user_account(id) ON DELETE CASCADE
 
@@ -69,24 +72,27 @@ Stores financial accounts (bank, credit card, cash, e-wallet).
 
 Stores expense category hierarchy (parent-child structure).
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique identifier |
-| user_id | UUID | FOREIGN KEY, NULLABLE | NULL for default, user ID for custom |
-| name | VARCHAR(200) | NOT NULL | Category name |
-| parent_category_id | UUID | FOREIGN KEY, NULLABLE | References expense_categories(id) |
-| created_at | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
+| Column             | Type         | Constraints           | Description                          |
+| ------------------ | ------------ | --------------------- | ------------------------------------ |
+| id                 | UUID         | PRIMARY KEY           | Unique identifier                    |
+| user_id            | UUID         | FOREIGN KEY, NULLABLE | NULL for default, user ID for custom |
+| name               | VARCHAR(200) | NOT NULL              | Category name                        |
+| parent_category_id | UUID         | FOREIGN KEY, NULLABLE | References expense_categories(id)    |
+| created_at         | TIMESTAMP    | DEFAULT NOW()         | Creation timestamp                   |
 
 **Indexes:**
+
 - PRIMARY KEY on `id`
 - INDEX on `user_id`
 - INDEX on `parent_category_id`
 
 **Constraints:**
+
 - FOREIGN KEY (user_id) REFERENCES user_account(id) ON DELETE CASCADE
 - FOREIGN KEY (parent_category_id) REFERENCES expense_categories(id) ON DELETE CASCADE
 
 **Business Rules:**
+
 - `user_id` NULL = default category (available to all users)
 - `user_id` NOT NULL = custom category (specific to user)
 - Maximum 2-level hierarchy (parent → child only)
@@ -97,21 +103,24 @@ Stores expense category hierarchy (parent-child structure).
 
 Stores income categories.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique identifier |
-| user_id | UUID | FOREIGN KEY, NULLABLE | NULL for default, user ID for custom |
-| name | VARCHAR(200) | NOT NULL | Category name |
-| created_at | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
+| Column     | Type         | Constraints           | Description                          |
+| ---------- | ------------ | --------------------- | ------------------------------------ |
+| id         | UUID         | PRIMARY KEY           | Unique identifier                    |
+| user_id    | UUID         | FOREIGN KEY, NULLABLE | NULL for default, user ID for custom |
+| name       | VARCHAR(200) | NOT NULL              | Category name                        |
+| created_at | TIMESTAMP    | DEFAULT NOW()         | Creation timestamp                   |
 
 **Indexes:**
+
 - PRIMARY KEY on `id`
 - INDEX on `user_id`
 
 **Constraints:**
+
 - FOREIGN KEY (user_id) REFERENCES user_account(id) ON DELETE CASCADE
 
 **Business Rules:**
+
 - `user_id` NULL = default category (available to all users)
 - `user_id` NOT NULL = custom category (specific to user)
 
@@ -121,18 +130,20 @@ Stores income categories.
 
 Stores people/organizations user transacts with.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique identifier |
-| user_id | UUID | FOREIGN KEY, NOT NULL | References user_account(id) |
-| name | VARCHAR(200) | NOT NULL | Counterparty name |
-| created_at | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
+| Column     | Type         | Constraints           | Description                 |
+| ---------- | ------------ | --------------------- | --------------------------- |
+| id         | UUID         | PRIMARY KEY           | Unique identifier           |
+| user_id    | UUID         | FOREIGN KEY, NOT NULL | References user_account(id) |
+| name       | VARCHAR(200) | NOT NULL              | Counterparty name           |
+| created_at | TIMESTAMP    | DEFAULT NOW()         | Creation timestamp          |
 
 **Indexes:**
+
 - PRIMARY KEY on `id`
 - INDEX on `user_id`
 
 **Constraints:**
+
 - FOREIGN KEY (user_id) REFERENCES user_account(id) ON DELETE CASCADE
 
 ---
@@ -141,26 +152,27 @@ Stores people/organizations user transacts with.
 
 Stores all financial transactions.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PRIMARY KEY | Unique identifier |
-| user_id | UUID | FOREIGN KEY, NOT NULL | References user_account(id) |
-| type | VARCHAR(50) | NOT NULL, CHECK | Expense, Income, Borrow, Transfer |
-| from_account_id | UUID | FOREIGN KEY, NULLABLE | References financial_account(id) |
-| to_account_id | UUID | FOREIGN KEY, NULLABLE | References financial_account(id) |
-| amount | DECIMAL(15,2) | NOT NULL | Transaction amount |
-| currency | VARCHAR(10) | NOT NULL | Transaction currency |
-| vnd_exchange | DECIMAL(15,4) | NULLABLE | Exchange rate for transfers between different currencies |
-| expense_category_id | UUID | FOREIGN KEY, NULLABLE | References expense_categories(id) |
-| income_category_id | UUID | FOREIGN KEY, NULLABLE | References income_categories(id) |
-| counterparty_id | UUID | FOREIGN KEY, NULLABLE | References counterparty(id) |
-| payment_method | VARCHAR(50) | NULLABLE | Cash, Credit card, Installment |
-| date_time | TIMESTAMP | NOT NULL | Transaction date and time |
-| details | TEXT | NULLABLE | Notes or description |
-| created_at | TIMESTAMP | DEFAULT NOW() | Record creation timestamp |
-| updated_at | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
+| Column              | Type          | Constraints           | Description                                              |
+| ------------------- | ------------- | --------------------- | -------------------------------------------------------- |
+| id                  | UUID          | PRIMARY KEY           | Unique identifier                                        |
+| user_id             | UUID          | FOREIGN KEY, NOT NULL | References user_account(id)                              |
+| type                | VARCHAR(50)   | NOT NULL, CHECK       | Expense, Income, Borrow, Transfer                        |
+| from_account_id     | UUID          | FOREIGN KEY, NULLABLE | References financial_account(id)                         |
+| to_account_id       | UUID          | FOREIGN KEY, NULLABLE | References financial_account(id)                         |
+| amount              | DECIMAL(15,2) | NOT NULL              | Transaction amount                                       |
+| currency            | VARCHAR(10)   | NOT NULL              | Transaction currency                                     |
+| vnd_exchange        | DECIMAL(15,4) | NULLABLE              | Exchange rate for transfers between different currencies |
+| expense_category_id | UUID          | FOREIGN KEY, NULLABLE | References expense_categories(id)                        |
+| income_category_id  | UUID          | FOREIGN KEY, NULLABLE | References income_categories(id)                         |
+| counterparty_id     | UUID          | FOREIGN KEY, NULLABLE | References counterparty(id)                              |
+| payment_method      | VARCHAR(50)   | NULLABLE              | Cash, Credit card, Installment                           |
+| date_time           | TIMESTAMP     | NOT NULL              | Transaction date and time                                |
+| details             | TEXT          | NULLABLE              | Notes or description                                     |
+| created_at          | TIMESTAMP     | DEFAULT NOW()         | Record creation timestamp                                |
+| updated_at          | TIMESTAMP     | DEFAULT NOW()         | Last update timestamp                                    |
 
 **Indexes:**
+
 - PRIMARY KEY on `id`
 - INDEX on `user_id`
 - INDEX on `date_time`
@@ -171,6 +183,7 @@ Stores all financial transactions.
 - INDEX on `income_category_id`
 
 **Constraints:**
+
 - CHECK (type IN ('Expense', 'Income', 'Transfer', 'Borrow'))
 - FOREIGN KEY (user_id) REFERENCES user_account(id) ON DELETE CASCADE
 - FOREIGN KEY (from_account_id) REFERENCES financial_account(id) ON DELETE SET NULL
@@ -180,6 +193,7 @@ Stores all financial transactions.
 - FOREIGN KEY (counterparty_id) REFERENCES counterparty(id) ON DELETE SET NULL
 
 **Business Rules:**
+
 - **Expense:** `from_account_id` required, `expense_category_id` required
 - **Income:** `to_account_id` required, `income_category_id` required
 - **Transfer:** Both `from_account_id` and `to_account_id` required
@@ -351,24 +365,24 @@ INSERT INTO expense_categories (user_id, name, parent_category_id) VALUES
     (NULL, 'Gas', '11111111-1111-1111-1111-111111111111'),
     (NULL, 'Internet', '11111111-1111-1111-1111-111111111111'),
     (NULL, 'Phone', '11111111-1111-1111-1111-111111111111'),
-    
+
     -- Coffee & Drinks
     (NULL, 'Coffee', '22222222-2222-2222-2222-222222222222'),
     (NULL, 'Tea', '22222222-2222-2222-2222-222222222222'),
     (NULL, 'Juice', '22222222-2222-2222-2222-222222222222'),
     (NULL, 'Soft drinks', '22222222-2222-2222-2222-222222222222'),
-    
+
     -- Dining
     (NULL, 'Restaurants', '33333333-3333-3333-3333-333333333333'),
     (NULL, 'Fast food', '33333333-3333-3333-3333-333333333333'),
     (NULL, 'Café', '33333333-3333-3333-3333-333333333333'),
     (NULL, 'Bar', '33333333-3333-3333-3333-333333333333'),
-    
+
     -- Education
     (NULL, 'Tuition', '44444444-4444-4444-4444-444444444444'),
     (NULL, 'Books & Supplies', '44444444-4444-4444-4444-444444444444'),
     (NULL, 'Courses & Training', '44444444-4444-4444-4444-444444444444'),
-    
+
     -- Entertainment & Leisure
     (NULL, 'Movies', '55555555-5555-5555-5555-555555555555'),
     (NULL, 'Concerts', '55555555-5555-5555-5555-555555555555'),
@@ -376,56 +390,56 @@ INSERT INTO expense_categories (user_id, name, parent_category_id) VALUES
     (NULL, 'Hobbies & Interests', '55555555-5555-5555-5555-555555555555'),
     (NULL, 'Travel', '55555555-5555-5555-5555-555555555555'),
     (NULL, 'Parking & Toll', '55555555-5555-5555-5555-555555555555'),
-    
+
     -- Fitness & Sports
     (NULL, 'Gym membership', '66666666-6666-6666-6666-666666666666'),
     (NULL, 'Equipment', '66666666-6666-6666-6666-666666666666'),
-    
+
     -- Gifts & Donations
     (NULL, 'Gifts', '77777777-7777-7777-7777-777777777777'),
     (NULL, 'Charity', '77777777-7777-7777-7777-777777777777'),
-    
+
     -- Groceries
     (NULL, 'Supermarket', '88888888-8888-8888-8888-888888888888'),
     (NULL, 'Fresh produce', '88888888-8888-8888-8888-888888888888'),
     (NULL, 'Meat & Seafood', '88888888-8888-8888-8888-888888888888'),
-    
+
     -- Healthcare
     (NULL, 'Medications', '99999999-9999-9999-9999-999999999999'),
     (NULL, 'Doctor visits', '99999999-9999-9999-9999-999999999999'),
     (NULL, 'Insurance', '99999999-9999-9999-9999-999999999999'),
-    
+
     -- Home & Garden
     (NULL, 'Furniture & Appliances', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
     (NULL, 'Repairs', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
     (NULL, 'Decor', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
     (NULL, 'Garden supplies', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
-    
+
     -- Kids
     (NULL, 'Toys', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
     (NULL, 'Childcare', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
     (NULL, 'School supplies', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
-    
+
     -- Lifestyle
     (NULL, 'Clothing', 'cccccccc-cccc-cccc-cccc-cccccccccccc'),
     (NULL, 'Beauty & Self-care', 'cccccccc-cccc-cccc-cccc-cccccccccccc'),
-    
+
     -- Personal Care
     (NULL, 'Haircuts & Grooming', 'dddddddd-dddd-dddd-dddd-dddddddddddd'),
     (NULL, 'Skincare', 'dddddddd-dddd-dddd-dddd-dddddddddddd'),
     (NULL, 'Wellness', 'dddddddd-dddd-dddd-dddd-dddddddddddd'),
-    
+
     -- Pets
     (NULL, 'Pet food', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'),
     (NULL, 'Veterinary', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'),
     (NULL, 'Pet supplies', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'),
-    
+
     -- Shopping
     (NULL, 'Electronics', 'ffffffff-ffff-ffff-ffff-ffffffffffff'),
     (NULL, 'Books', 'ffffffff-ffff-ffff-ffff-ffffffffffff'),
     (NULL, 'Holidays & Festivals', 'ffffffff-ffff-ffff-ffff-ffffffffffff'),
     (NULL, 'Events gatherings', 'ffffffff-ffff-ffff-ffff-ffffffffffff'),
-    
+
     -- Transportation
     (NULL, 'Fuel', '00000000-0000-0000-0000-000000000000'),
     (NULL, 'Public transit', '00000000-0000-0000-0000-000000000000'),

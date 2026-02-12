@@ -68,19 +68,19 @@ PocketMate democratizes personal financial management by providing a powerful ye
 
 ### 3.1 Technology Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Frontend Framework | Next.js 14+ | React framework with App Router, SSR, and API routes |
-| Language | TypeScript | Type-safe development |
-| Styling | Tailwind CSS | Utility-first CSS framework |
-| UI Components | shadcn/ui | Accessible, customizable components |
-| Backend/Database | Supabase | PostgreSQL database with real-time capabilities |
-| Authentication | Supabase Auth | Built-in authentication system |
-| Form Handling | React Hook Form | Performant form management |
-| Validation | Zod | Schema validation |
-| State Management | TanStack Query | Server state management and caching |
-| Charts | Recharts | Composable charting library |
-| Date Utilities | date-fns | Date manipulation and formatting |
+| Layer              | Technology      | Purpose                                              |
+| ------------------ | --------------- | ---------------------------------------------------- |
+| Frontend Framework | Next.js 14+     | React framework with App Router, SSR, and API routes |
+| Language           | TypeScript      | Type-safe development                                |
+| Styling            | Tailwind CSS    | Utility-first CSS framework                          |
+| UI Components      | shadcn/ui       | Accessible, customizable components                  |
+| Backend/Database   | Supabase        | PostgreSQL database with real-time capabilities      |
+| Authentication     | Supabase Auth   | Built-in authentication system                       |
+| Form Handling      | React Hook Form | Performant form management                           |
+| Validation         | Zod             | Schema validation                                    |
+| State Management   | TanStack Query  | Server state management and caching                  |
+| Charts             | Recharts        | Composable charting library                          |
+| Date Utilities     | date-fns        | Date manipulation and formatting                     |
 
 ### 3.2 System Architecture
 
@@ -106,11 +106,13 @@ PocketMate democratizes personal financial management by providing a powerful ye
 ### 4.1 User Authentication
 
 #### FR-AUTH-001: User Registration
+
 **Priority:** High
 
 The system shall allow new users to create an account by providing a username and password. Email verification is not required for the MVP version.
 
 **Acceptance Criteria:**
+
 - User can enter a unique username
 - User can create a password (minimum 8 characters)
 - System validates username uniqueness
@@ -118,11 +120,13 @@ The system shall allow new users to create an account by providing a username an
 - System creates a user profile record
 
 #### FR-AUTH-002: User Login
+
 **Priority:** High
 
 The system shall allow registered users to log in using their username and password.
 
 **Acceptance Criteria:**
+
 - User can enter username and password
 - System validates credentials
 - System creates a session token upon successful login
@@ -130,11 +134,13 @@ The system shall allow registered users to log in using their username and passw
 - User is redirected to dashboard after successful login
 
 #### FR-AUTH-003: User Logout
+
 **Priority:** High
 
 The system shall allow users to securely log out of their account.
 
 **Acceptance Criteria:**
+
 - User can click logout button
 - System invalidates session token
 - User is redirected to login page
@@ -145,11 +151,13 @@ The system shall allow users to securely log out of their account.
 ### 4.2 Financial Account Management
 
 #### FR-ACC-001: Create Financial Account
+
 **Priority:** High
 
 Users shall be able to create financial accounts to track their money across different sources.
 
 **Acceptance Criteria:**
+
 - User can select account type (Bank Account, Credit Card, E-wallet, Cash)
 - User can enter account name
 - User can select currency (VND, USD, mace)
@@ -159,11 +167,13 @@ Users shall be able to create financial accounts to track their money across dif
 - Opening balance is recorded as the first transaction
 
 #### FR-ACC-002: View Financial Accounts
+
 **Priority:** High
 
 Users shall be able to view a list of all their financial accounts.
 
 **Acceptance Criteria:**
+
 - System displays all accounts in a list or card view
 - Each account shows: name, type, currency, current balance
 - Current balance is calculated from opening balance + sum of all transactions
@@ -171,11 +181,13 @@ Users shall be able to view a list of all their financial accounts.
 - User can search accounts by name
 
 #### FR-ACC-003: Edit Financial Account
+
 **Priority:** Medium
 
 Users shall be able to edit account details.
 
 **Acceptance Criteria:**
+
 - User can update account name
 - User can update account type
 - User cannot change currency if transactions exist (data integrity)
@@ -184,11 +196,13 @@ Users shall be able to edit account details.
 - System updates the account record
 
 #### FR-ACC-004: Delete Financial Account
+
 **Priority:** Medium
 
 Users shall be able to delete financial accounts.
 
 **Acceptance Criteria:**
+
 - System prevents deletion if transactions exist (must delete transactions first)
 - User receives confirmation prompt before deletion
 - System removes the account from database
@@ -199,11 +213,13 @@ Users shall be able to delete financial accounts.
 ### 4.3 Transaction Management
 
 #### FR-TXN-001: Create Expense Transaction
+
 **Priority:** High
 
 Users shall be able to record expense transactions.
 
 **Acceptance Criteria:**
+
 - User selects transaction type: Expense
 - User selects financial account (source of payment)
 - User enters amount
@@ -218,11 +234,13 @@ Users shall be able to record expense transactions.
 - System saves transaction
 
 #### FR-TXN-002: Create Income Transaction
+
 **Priority:** High
 
 Users shall be able to record income transactions.
 
 **Acceptance Criteria:**
+
 - User selects transaction type: Income
 - User selects financial account (destination)
 - User enters amount
@@ -235,11 +253,13 @@ Users shall be able to record income transactions.
 - System saves transaction
 
 #### FR-TXN-003: Create Transfer Transaction
+
 **Priority:** High
 
 Users shall be able to transfer money between their accounts.
 
 **Acceptance Criteria:**
+
 - User selects transaction type: Transfer
 - User selects source account (from)
 - User selects destination account (to)
@@ -253,11 +273,13 @@ Users shall be able to transfer money between their accounts.
 - System creates linked transaction records
 
 #### FR-TXN-004: Create Borrow Transaction
+
 **Priority:** Medium
 
 Users shall be able to record borrowing or lending transactions.
 
 **Acceptance Criteria:**
+
 - User selects transaction type: Borrow
 - User specifies if borrowing (receiving) or lending (giving)
 - User selects financial account
@@ -269,11 +291,13 @@ Users shall be able to record borrowing or lending transactions.
 - System saves transaction
 
 #### FR-TXN-005: View Transactions
+
 **Priority:** High
 
 Users shall be able to view their transaction history.
 
 **Acceptance Criteria:**
+
 - System displays transactions in reverse chronological order
 - Each transaction shows: date, type, category, amount, account, balance after
 - User can filter by date range
@@ -284,11 +308,13 @@ Users shall be able to view their transaction history.
 - System supports pagination for large datasets
 
 #### FR-TXN-006: Edit Transaction
+
 **Priority:** Medium
 
 Users shall be able to edit existing transactions.
 
 **Acceptance Criteria:**
+
 - User can modify all transaction fields except type
 - System recalculates account balances
 - System updates timestamp
@@ -296,11 +322,13 @@ Users shall be able to edit existing transactions.
 - For transfer transactions, system updates both linked records
 
 #### FR-TXN-007: Delete Transaction
+
 **Priority:** Medium
 
 Users shall be able to delete transactions.
 
 **Acceptance Criteria:**
+
 - User receives confirmation prompt
 - System reverses the transaction impact on account balance
 - For transfer transactions, system deletes both linked records
@@ -312,11 +340,13 @@ Users shall be able to delete transactions.
 ### 4.4 Category Management
 
 #### FR-CAT-001: View Default Categories
+
 **Priority:** High
 
 The system shall provide default expense and income categories organized in a two-level hierarchy.
 
 **Default Expense Categories (Parent → Children):**
+
 - Bills & Utilities → Electricity, Water, Gas, Internet, Phone
 - Coffee & Drinks → Coffee, Tea, Juice, Soft drinks
 - Dining → Restaurants, Fast food, Café, Bar
@@ -335,6 +365,7 @@ The system shall provide default expense and income categories organized in a tw
 - Transportation → Fuel, Public transit, Taxi/Ride-share, Vehicle maintenance
 
 **Default Income Categories:**
+
 - Salary
 - Freelance
 - Investment
@@ -342,11 +373,13 @@ The system shall provide default expense and income categories organized in a tw
 - Other
 
 #### FR-CAT-002: Create Custom Category
+
 **Priority:** Medium
 
 Users shall be able to create custom categories.
 
 **Acceptance Criteria:**
+
 - User can create a new parent category
 - User can create a child category under existing parent
 - User enters category name
@@ -356,11 +389,13 @@ Users shall be able to create custom categories.
 - Category appears in category lists for transaction creation
 
 #### FR-CAT-003: Edit Category
+
 **Priority:** Medium
 
 Users shall be able to edit both default and custom categories.
 
 **Acceptance Criteria:**
+
 - User can rename category
 - User can move child category to different parent
 - User cannot change category type (expense/income) if transactions exist
@@ -368,11 +403,13 @@ Users shall be able to edit both default and custom categories.
 - System validates changes
 
 #### FR-CAT-004: Delete Category
+
 **Priority:** Medium
 
 Users shall be able to delete custom categories.
 
 **Acceptance Criteria:**
+
 - System prevents deletion if transactions are using this category
 - User must reassign transactions to another category before deletion
 - System displays list of transactions using the category
@@ -385,27 +422,32 @@ Users shall be able to delete custom categories.
 ### 4.5 Counterparty Management
 
 #### FR-CPT-001: Create Counterparty
+
 **Priority:** Medium
 
 Users shall be able to create counterparty records to track people or organizations they transact with.
 
 **Acceptance Criteria:**
+
 - User enters counterparty name
 - System validates name uniqueness
 - System saves counterparty record
 - Counterparty appears in selection lists for transactions
 
 #### FR-CPT-002: View Counterparties
+
 **Priority:** Low
 
 Users shall be able to view all counterparties.
 
 #### FR-CPT-003: Edit Counterparty
+
 **Priority:** Low
 
 Users shall be able to edit counterparty names.
 
 #### FR-CPT-004: Delete Counterparty
+
 **Priority:** Low
 
 Users shall be able to delete counterparties if no transactions reference them.
@@ -415,11 +457,13 @@ Users shall be able to delete counterparties if no transactions reference them.
 ### 4.6 Reporting & Analytics
 
 #### FR-RPT-001: Expense Report
+
 **Priority:** High
 
 Users shall be able to view comprehensive expense analysis.
 
 **Acceptance Criteria:**
+
 - User can select time period (month, year, custom date range)
 - System displays total expense amount for selected period
 - System shows proportion of each expense category as pie chart
@@ -430,11 +474,13 @@ Users shall be able to view comprehensive expense analysis.
 - User can drill down to child categories
 
 #### FR-RPT-002: Income Report
+
 **Priority:** High
 
 Users shall be able to view comprehensive income analysis.
 
 **Acceptance Criteria:**
+
 - User can select time period (month, year, custom date range)
 - System displays total income amount for selected period
 - System shows proportion of each income category as pie chart
@@ -443,11 +489,13 @@ Users shall be able to view comprehensive income analysis.
 - User can view list of transactions under each category
 
 #### FR-RPT-003: Expense vs Income Report
+
 **Priority:** High
 
 Users shall be able to compare income against expenses.
 
 **Acceptance Criteria:**
+
 - User can select time period (month, year, custom date range)
 - System displays total income vs total expense
 - System calculates net savings/deficit
@@ -456,11 +504,13 @@ Users shall be able to compare income against expenses.
 - System shows trend indicators (increasing/decreasing)
 
 #### FR-RPT-004: Financial Statement
+
 **Priority:** High
 
 Users shall be able to view their current financial position.
 
 **Acceptance Criteria:**
+
 - System displays all financial accounts with current balances (Assets)
 - System shows amounts lent to others by counterparty
 - System shows amounts owed to others by counterparty (Liabilities)
@@ -469,11 +519,13 @@ Users shall be able to view their current financial position.
 - User can view transaction list for each counterparty
 
 #### FR-RPT-005: Transaction History
+
 **Priority:** High
 
 Users shall be able to view complete transaction history with filtering.
 
 **Acceptance Criteria:**
+
 - System displays all transactions in chronological order
 - User can sort by date, amount, category
 - User can filter by date range, type, account, category
@@ -571,13 +623,13 @@ Users shall be able to view complete transaction history with filtering.
 
 ### 6.3 Development Timeline (7 weeks)
 
-| Phase | Duration | Deliverables |
-|-------|----------|--------------|
-| 1. Setup & Infrastructure | 1 week | Project setup, database schema, authentication |
-| 2. Account Management | 1 week | CRUD for financial accounts |
-| 3. Transaction Management | 2 weeks | CRUD for transactions, category management |
-| 4. Reporting & Analytics | 2 weeks | All report types with charts |
-| 5. Testing & Refinement | 1 week | Bug fixes, performance optimization, UI polish |
+| Phase                     | Duration | Deliverables                                   |
+| ------------------------- | -------- | ---------------------------------------------- |
+| 1. Setup & Infrastructure | 1 week   | Project setup, database schema, authentication |
+| 2. Account Management     | 1 week   | CRUD for financial accounts                    |
+| 3. Transaction Management | 2 weeks  | CRUD for transactions, category management     |
+| 4. Reporting & Analytics  | 2 weeks  | All report types with charts                   |
+| 5. Testing & Refinement   | 1 week   | Bug fixes, performance optimization, UI polish |
 
 ---
 

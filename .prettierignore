@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+build
+.vercel
+
+# Cursor / agent rules file (not meant for formatting)
+.cursorrules
+
+# Lockfiles are machine-generated
+package-lock.json

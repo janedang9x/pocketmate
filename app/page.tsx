@@ -10,10 +10,9 @@ export default function Home() {
             Personal & family finance that respects your data.
           </h1>
           <p className="max-w-3xl text-base text-slate-600 dark:text-slate-300">
-            Next.js 14 (App Router) + TypeScript + Tailwind + shadcn/ui +
-            Supabase. Start by wiring up auth, accounts, and secure data flows
-            in line with the requirements in `docs/requirements.md` and schema
-            in `docs/database-schema.md`.
+            Next.js 14 (App Router) + TypeScript + Tailwind + shadcn/ui + Supabase. Start by wiring
+            up auth, accounts, and secure data flows in line with the requirements in
+            `docs/requirements.md` and schema in `docs/database-schema.md`.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -66,9 +65,7 @@ export default function Home() {
         <h2 className="text-xl font-semibold">Developer quickstart</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-2 rounded-xl border border-dashed border-slate-200 p-4 text-sm dark:border-slate-800">
-            <p className="font-semibold text-slate-800 dark:text-slate-100">
-              1) Install & run
-            </p>
+            <p className="font-semibold text-slate-800 dark:text-slate-100">1) Install & run</p>
             <ul className="space-y-1 text-slate-600 dark:text-slate-300">
               <li>npm install</li>
               <li>npm run dev</li>
@@ -76,9 +73,7 @@ export default function Home() {
             </ul>
           </div>
           <div className="space-y-2 rounded-xl border border-dashed border-slate-200 p-4 text-sm dark:border-slate-800">
-            <p className="font-semibold text-slate-800 dark:text-slate-100">
-              2) Database
-            </p>
+            <p className="font-semibold text-slate-800 dark:text-slate-100">2) Database</p>
             <ul className="space-y-1 text-slate-600 dark:text-slate-300">
               <li>Apply `supabase/schema.sql`</li>
               <li>Seed defaults via `supabase/seed.sql`</li>

@@ -1,4 +1,3 @@
-
 # API Design - PocketMate
 
 ## Overview
@@ -60,6 +59,7 @@ Authorization: Bearer <token>
 Register a new user account.
 
 **Request Body:**
+
 ```json
 {
   "username": "string (required, 3-100 chars)",
@@ -68,6 +68,7 @@ Register a new user account.
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -84,6 +85,7 @@ Register a new user account.
 ```
 
 **Errors:**
+
 - `400` - Validation error (weak password, invalid username)
 - `409` - Username already exists
 
@@ -94,6 +96,7 @@ Register a new user account.
 Authenticate user and return session token.
 
 **Request Body:**
+
 ```json
 {
   "username": "string (required)",
@@ -102,6 +105,7 @@ Authenticate user and return session token.
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -117,6 +121,7 @@ Authenticate user and return session token.
 ```
 
 **Errors:**
+
 - `401` - Invalid credentials
 
 ---
@@ -128,6 +133,7 @@ End user session.
 **Request:** No body required (uses token from header)
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -144,10 +150,12 @@ End user session.
 List all financial accounts for the authenticated user.
 
 **Query Parameters:**
+
 - `type` (optional): Filter by account type (Bank Account, Credit Card, E-wallet, Cash)
 - `search` (optional): Search by account name
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -174,6 +182,7 @@ List all financial accounts for the authenticated user.
 Create a new financial account.
 
 **Request Body:**
+
 ```json
 {
   "name": "string (required, max 200 chars)",
@@ -184,6 +193,7 @@ Create a new financial account.
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -202,6 +212,7 @@ Create a new financial account.
 ```
 
 **Errors:**
+
 - `400` - Validation error
 
 **Note:** Creates an initial transaction for the opening balance.
@@ -213,6 +224,7 @@ Create a new financial account.
 Get details of a specific financial account.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -232,6 +244,7 @@ Get details of a specific financial account.
 ```
 
 **Errors:**
+
 - `404` - Account not found
 
 ---
@@ -241,6 +254,7 @@ Get details of a specific financial account.
 Update an existing financial account.
 
 **Request Body:**
+
 ```json
 {
   "name": "string (optional, max 200 chars)",
@@ -249,6 +263,7 @@ Update an existing financial account.
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -260,6 +275,7 @@ Update an existing financial account.
 ```
 
 **Errors:**
+
 - `400` - Validation error or attempt to change currency/opening balance with existing transactions
 - `404` - Account not found
 
@@ -270,6 +286,7 @@ Update an existing financial account.
 Delete a financial account.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -278,6 +295,7 @@ Delete a financial account.
 ```
 
 **Errors:**
+
 - `400` - Cannot delete account with existing transactions
 - `404` - Account not found
 
@@ -290,6 +308,7 @@ Delete a financial account.
 List transactions with filtering and pagination.
 
 **Query Parameters:**
+
 - `page` (optional, default: 1): Page number
 - `limit` (optional, default: 50): Items per page
 - `type` (optional): Filter by type (Expense, Income, Transfer, Borrow)
@@ -300,6 +319,7 @@ List transactions with filtering and pagination.
 - `search` (optional): Search in transaction details
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -336,6 +356,7 @@ List transactions with filtering and pagination.
 Create a new transaction.
 
 **Request Body (Expense):**
+
 ```json
 {
   "type": "Expense",
@@ -351,6 +372,7 @@ Create a new transaction.
 ```
 
 **Request Body (Income):**
+
 ```json
 {
   "type": "Income",
@@ -365,6 +387,7 @@ Create a new transaction.
 ```
 
 **Request Body (Transfer):**
+
 ```json
 {
   "type": "Transfer",
@@ -379,6 +402,7 @@ Create a new transaction.
 ```
 
 **Request Body (Borrow):**
+
 ```json
 {
   "type": "Borrow",
@@ -393,6 +417,7 @@ Create a new transaction.
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -404,6 +429,7 @@ Create a new transaction.
 ```
 
 **Errors:**
+
 - `400` - Validation error
 - `404` - Account or category not found
 
@@ -414,6 +440,7 @@ Create a new transaction.
 Get details of a specific transaction.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -424,6 +451,7 @@ Get details of a specific transaction.
 ```
 
 **Errors:**
+
 - `404` - Transaction not found
 
 ---
@@ -436,6 +464,7 @@ Update an existing transaction.
 Same as POST but all fields optional except what you want to update.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -447,6 +476,7 @@ Same as POST but all fields optional except what you want to update.
 ```
 
 **Errors:**
+
 - `400` - Validation error or cannot change transaction type
 - `404` - Transaction not found
 
@@ -459,6 +489,7 @@ Same as POST but all fields optional except what you want to update.
 Delete a transaction.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -467,6 +498,7 @@ Delete a transaction.
 ```
 
 **Errors:**
+
 - `404` - Transaction not found
 
 **Note:** Account balances are automatically adjusted.
@@ -480,6 +512,7 @@ Delete a transaction.
 List all expense categories (default + user custom).
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -510,6 +543,7 @@ List all expense categories (default + user custom).
 Create a custom expense category.
 
 **Request Body:**
+
 ```json
 {
   "name": "string (required, max 200 chars)",
@@ -518,6 +552,7 @@ Create a custom expense category.
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -529,6 +564,7 @@ Create a custom expense category.
 ```
 
 **Errors:**
+
 - `400` - Validation error or duplicate name
 - `404` - Parent category not found
 
@@ -539,6 +575,7 @@ Create a custom expense category.
 Update an expense category.
 
 **Request Body:**
+
 ```json
 {
   "name": "string (optional)",
@@ -547,6 +584,7 @@ Update an expense category.
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -558,6 +596,7 @@ Update an expense category.
 ```
 
 **Errors:**
+
 - `400` - Validation error
 - `403` - Cannot edit default categories
 - `404` - Category not found
@@ -569,6 +608,7 @@ Update an expense category.
 Delete a custom expense category.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -577,6 +617,7 @@ Delete a custom expense category.
 ```
 
 **Errors:**
+
 - `400` - Category has transactions or child categories
 - `403` - Cannot delete default categories
 - `404` - Category not found
@@ -588,6 +629,7 @@ Delete a custom expense category.
 List all income categories (default + user custom).
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -610,6 +652,7 @@ List all income categories (default + user custom).
 Create a custom income category.
 
 **Request Body:**
+
 ```json
 {
   "name": "string (required, max 200 chars)"
@@ -617,6 +660,7 @@ Create a custom income category.
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -634,6 +678,7 @@ Create a custom income category.
 Update an income category.
 
 **Request Body:**
+
 ```json
 {
   "name": "string (required)"
@@ -641,6 +686,7 @@ Update an income category.
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -658,6 +704,7 @@ Update an income category.
 Delete a custom income category.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -666,6 +713,7 @@ Delete a custom income category.
 ```
 
 **Errors:**
+
 - `400` - Category has transactions
 - `403` - Cannot delete default categories
 - `404` - Category not found
@@ -679,6 +727,7 @@ Delete a custom income category.
 List all counterparties.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -702,6 +751,7 @@ List all counterparties.
 Create a new counterparty.
 
 **Request Body:**
+
 ```json
 {
   "name": "string (required, max 200 chars)"
@@ -709,6 +759,7 @@ Create a new counterparty.
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -726,6 +777,7 @@ Create a new counterparty.
 Update a counterparty.
 
 **Request Body:**
+
 ```json
 {
   "name": "string (required)"
@@ -733,6 +785,7 @@ Update a counterparty.
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -750,6 +803,7 @@ Update a counterparty.
 Delete a counterparty.
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -758,6 +812,7 @@ Delete a counterparty.
 ```
 
 **Errors:**
+
 - `400` - Counterparty has transactions
 - `404` - Counterparty not found
 
@@ -770,12 +825,14 @@ Delete a counterparty.
 Get expense report with analytics.
 
 **Query Parameters:**
+
 - `startDate` (required): Start of date range
 - `endDate` (required): End of date range
 - `categoryIds` (optional): Comma-separated category IDs to filter
 - `groupBy` (optional, default: 'month'): 'day' | 'week' | 'month' | 'year'
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -812,12 +869,14 @@ Get expense report with analytics.
 Get income report with analytics.
 
 **Query Parameters:**
+
 - `startDate` (required)
 - `endDate` (required)
 - `categoryIds` (optional)
 - `groupBy` (optional, default: 'month')
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -840,11 +899,13 @@ Get income report with analytics.
 Get expense vs income comparison report.
 
 **Query Parameters:**
+
 - `startDate` (required)
 - `endDate` (required)
 - `groupBy` (optional, default: 'month')
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -874,6 +935,7 @@ Get expense vs income comparison report.
 Get financial statement (current position).
 
 **Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -922,22 +984,25 @@ All protected routes should use authentication middleware:
 
 ```typescript
 // middleware.ts or in route handlers
-import { NextRequest } from 'next/server';
+import { NextRequest } from "next/server";
 
 export async function authenticateRequest(req: NextRequest) {
-  const token = req.headers.get('Authorization')?.replace('Bearer ', '');
-  
+  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+
   if (!token) {
-    throw new Error('UNAUTHORIZED');
+    throw new Error("UNAUTHORIZED");
   }
-  
+
   // Verify token with Supabase
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token);
+
   if (error || !user) {
-    throw new Error('UNAUTHORIZED');
+    throw new Error("UNAUTHORIZED");
   }
-  
+
   return user;
 }
 ```
@@ -948,27 +1013,28 @@ Standardized error handler:
 
 ```typescript
 export function handleApiError(error: any) {
-  console.error('API Error:', error);
-  
-  if (error.message === 'UNAUTHORIZED') {
+  console.error("API Error:", error);
+
+  if (error.message === "UNAUTHORIZED") {
     return NextResponse.json(
-      { success: false, error: 'Authentication required', code: 'UNAUTHORIZED' },
-      { status: 401 }
+      { success: false, error: "Authentication required", code: "UNAUTHORIZED" },
+      { status: 401 },
     );
   }
-  
-  if (error.code === '23505') { // PostgreSQL unique violation
+
+  if (error.code === "23505") {
+    // PostgreSQL unique violation
     return NextResponse.json(
-      { success: false, error: 'Resource already exists', code: 'DUPLICATE_ERROR' },
-      { status: 409 }
+      { success: false, error: "Resource already exists", code: "DUPLICATE_ERROR" },
+      { status: 409 },
     );
   }
-  
+
   // ... more error handling
-  
+
   return NextResponse.json(
-    { success: false, error: 'Internal server error', code: 'SERVER_ERROR' },
-    { status: 500 }
+    { success: false, error: "Internal server error", code: "SERVER_ERROR" },
+    { status: 500 },
   );
 }
 ```
@@ -978,13 +1044,13 @@ export function handleApiError(error: any) {
 Use Zod schemas for request validation:
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 const createAccountSchema = z.object({
   name: z.string().min(1).max(200),
-  type: z.enum(['Bank Account', 'Credit Card', 'E-wallet', 'Cash']),
+  type: z.enum(["Bank Account", "Credit Card", "E-wallet", "Cash"]),
   currency: z.string().length(3),
-  openingBalance: z.number()
+  openingBalance: z.number(),
 });
 
 // In route handler
