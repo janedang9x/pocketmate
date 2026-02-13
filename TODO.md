@@ -197,19 +197,19 @@
 
 ### Sprint 2.4: Account Dashboard Integration
 
-- [ ] **Update Dashboard**
-  - [ ] Fetch account balances on dashboard
-  - [ ] Display total balance across all accounts
-  - [ ] Show account summary cards
-  - [ ] Add "Add Account" quick action button
-  - [ ] Link to accounts page
+- [x] **Update Dashboard**
+  - [x] Fetch account balances on dashboard
+  - [x] Display total balance across all accounts
+  - [x] Show account summary cards
+  - [x] Add "Add Account" quick action button
+  - [x] Link to accounts page
 
-- [ ] **Create Account Utilities**
-  - [ ] Create `/lib/utils/account.utils.ts`
-  - [ ] Add `calculateBalance` function
-  - [ ] Add `formatCurrency` function
-  - [ ] Add `getAccountIcon` function
-  - [ ] Add balance aggregation helpers
+- [x] **Create Account Utilities**
+  - [x] Create `/lib/utils/account.utils.ts`
+  - [x] Add `calculateBalance` function
+  - [x] Add `formatCurrency` function
+  - [x] Add `getAccountIcon` function
+  - [x] Add balance aggregation helpers
 
 ---
 
