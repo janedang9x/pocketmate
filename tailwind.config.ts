@@ -53,6 +53,12 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        sidebar: {
+          bg: "hsl(var(--sidebar-bg))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          active: "hsl(var(--sidebar-active))",
+          hover: "hsl(var(--sidebar-hover))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

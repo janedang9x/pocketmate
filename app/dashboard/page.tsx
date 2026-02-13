@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, TrendingDown, Receipt, ArrowRight } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Receipt, ArrowRight, PiggyBank } from "lucide-react";
 import { AccountCard } from "@/components/accounts/AccountCard";
 import { formatCurrency, calculateTotalBalance, getTopAccountsByBalance, aggregateBalancesByCurrency } from "@/lib/utils/account.utils";
 import type { AccountWithBalance, Currency } from "@/types/account.types";
@@ -63,34 +63,36 @@ export default function DashboardPage() {
   const primaryCurrencyBalance = balancesByCurrency.get(primaryCurrency) ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">
           Overview of your financial accounts and recent activity
         </p>
       </div>
 
       {/* Summary Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Balance</CardTitle>
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+              <Wallet className="h-5 w-5 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="text-2xl font-bold">--</div>
+              <div className="text-3xl font-bold">--</div>
             ) : error ? (
-              <div className="text-2xl font-bold text-destructive">Error</div>
+              <div className="text-3xl font-bold text-destructive">Error</div>
             ) : accounts.length === 0 ? (
-              <div className="text-2xl font-bold">0 {primaryCurrency}</div>
+              <div className="text-3xl font-bold">0 {primaryCurrency}</div>
             ) : (
               <>
-                <div className="text-2xl font-bold">{formatCurrency(primaryCurrencyBalance, primaryCurrency)}</div>
+                <div className="text-3xl font-bold">{formatCurrency(primaryCurrencyBalance, primaryCurrency)}</div>
                 {balancesByCurrency.size > 1 && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Multi-currency: {Array.from(balancesByCurrency.entries())
                       .map(([curr, bal]) => formatCurrency(bal, curr))
                       .join(", ")}
@@ -98,55 +100,61 @@ export default function DashboardPage() {
                 )}
               </>
             )}
-            <p className="text-xs text-muted-foreground">Across all accounts</p>
+            <p className="text-xs text-muted-foreground mt-2">Across all accounts</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Income</CardTitle>
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <div className="text-3xl font-bold">--</div>
+            <p className="text-xs text-muted-foreground mt-2">This month</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Expenses</CardTitle>
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+              <TrendingDown className="h-5 w-5 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <div className="text-3xl font-bold">--</div>
+            <p className="text-xs text-muted-foreground mt-2">This month</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Savings</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Net Savings</CardTitle>
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center">
+              <PiggyBank className="h-5 w-5 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">Income - Expenses</p>
+            <div className="text-3xl font-bold">--</div>
+            <p className="text-xs text-muted-foreground mt-2">Income - Expenses</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Account Summary Cards */}
       {!isLoading && !error && accounts.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div>
-              <CardTitle>Your Accounts</CardTitle>
-              <CardDescription>Top accounts by balance</CardDescription>
+              <CardTitle className="text-xl font-semibold">Your Accounts</CardTitle>
+              <CardDescription className="mt-1">Top accounts by balance</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" asChild className="gap-2">
               <Link href="/accounts">
-                View All <ArrowRight className="ml-2 h-4 w-4" />
+                View All <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
           </CardHeader>
@@ -161,35 +169,43 @@ export default function DashboardPage() {
       )}
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common tasks and shortcuts</CardDescription>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-semibold">Quick Actions</CardTitle>
+          <CardDescription className="mt-1">Common tasks and shortcuts</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Button variant="outline" className="h-auto flex-col py-4" asChild>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
               <Link href="/accounts/new">
-                <Wallet className="mb-2 h-5 w-5" />
-                <span>Add Account</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center mb-3">
+                  <Wallet className="h-6 w-6 text-white" />
+                </div>
+                <span className="font-medium">Add Account</span>
               </Link>
             </Button>
-            <Button variant="outline" className="h-auto flex-col py-4" asChild>
+            <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
               <Link href="/transactions">
-                <Receipt className="mb-2 h-5 w-5" />
-                <span>Add Transaction</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mb-3">
+                  <Receipt className="h-6 w-6 text-white" />
+                </div>
+                <span className="font-medium">Add Transaction</span>
               </Link>
             </Button>
-            <Button variant="outline" className="h-auto flex-col py-4" asChild>
+            <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
               <Link href="/reports">
-                <TrendingUp className="mb-2 h-5 w-5" />
-                <span>View Reports</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center mb-3">
+                  <TrendingUp className="h-6 w-6 text-white" />
+                </div>
+                <span className="font-medium">View Reports</span>
               </Link>
             </Button>
-            <Button variant="outline" className="h-auto flex-col py-4" asChild>
+            <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
               <Link href="/accounts">
-                <Wallet className="mb-2 h-5 w-5" />
-                <span>View Accounts</span>
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center mb-3">
+                  <Wallet className="h-6 w-6 text-white" />
+                </div>
+                <span className="font-medium">View Accounts</span>
               </Link>
             </Button>
           </div>
@@ -197,15 +213,16 @@ export default function DashboardPage() {
       </Card>
 
       {/* Recent Transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>Your latest financial activity</CardDescription>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-semibold">Recent Transactions</CardTitle>
+          <CardDescription className="mt-1">Your latest financial activity</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-              No transactions yet. Start by adding your first transaction!
+            <div className="flex flex-col items-center justify-center py-12 text-sm text-muted-foreground">
+              <Receipt className="h-12 w-12 mb-3 text-muted-foreground/30" />
+              <p>No transactions yet. Start by adding your first transaction!</p>
             </div>
           </div>
         </CardContent>

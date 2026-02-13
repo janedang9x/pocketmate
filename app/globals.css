@@ -3,17 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
+  --background: 245 20% 98%; /* Light gray main content #f5f7fa */
   --foreground: 240 10% 3.9%;
 
-  --card: 0 0% 100%;
+  --card: 0 0% 100%; /* White cards */
   --card-foreground: 240 10% 3.9%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 240 10% 3.9%;
 
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 165 100% 42%; /* Teal accent #00d4aa */
+  --primary-foreground: 0 0% 100%;
 
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
@@ -29,9 +29,16 @@
 
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
-  --ring: 222.2 84% 4.9%;
+  --ring: 165 100% 42%; /* Teal ring */
 
   --radius: 12px;
+
+  /* Custom colors for PocketMate design */
+  --sidebar-bg: 220 30% 15%; /* Dark navy #1a1f2e */
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-active: 165 100% 42%; /* Teal active state */
+  --sidebar-hover: 220 30% 20%;
+  --main-bg: 245 20% 98%; /* Light gray #f5f7fa */
 }
 
 .dark {

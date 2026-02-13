@@ -15,6 +15,8 @@ import {
   X,
   LogOut,
   User,
+  Bell,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +63,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen" style={{ backgroundColor: "hsl(var(--main-bg))" }}>
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -73,20 +75,24 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-full w-64 transform border-r bg-card transition-transform duration-200 ease-in-out lg:translate-x-0",
+          "fixed left-0 top-0 z-50 h-full w-64 transform border-r transition-transform duration-200 ease-in-out lg:translate-x-0",
+          "bg-sidebar-bg text-sidebar-foreground",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         <div className="flex h-full flex-col">
           {/* Logo/Brand */}
-          <div className="flex h-16 items-center justify-between border-b px-6">
-            <Link href="/dashboard" className="text-xl font-semibold">
-              PocketMate
+          <div className="flex h-16 items-center justify-between border-b border-white/10 px-6">
+            <Link href="/dashboard" className="flex items-center gap-2 text-xl font-semibold text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
+              <span>PocketMate</span>
             </Link>
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden text-sidebar-foreground hover:bg-sidebar-hover"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-5 w-5" />
@@ -94,7 +100,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-4">
+          <nav className="flex-1 space-y-2 p-4">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -103,29 +109,27 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                      ? "bg-sidebar-active text-white shadow-sm"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-hover hover:text-sidebar-foreground",
                   )}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
                   {item.label}
                 </Link>
               );
             })}
           </nav>
 
-          {/* User section */}
-          <div className="border-t p-4">
-            <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                <User className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <p className="truncate text-sm font-medium">{username}</p>
-              </div>
+          {/* Pro Tip Section */}
+          <div className="border-t border-white/10 p-4">
+            <div className="rounded-lg bg-sidebar-hover/50 p-3">
+              <p className="text-xs font-semibold text-sidebar-foreground mb-1">Pro Tip</p>
+              <p className="text-xs text-sidebar-foreground/70">
+                Track your expenses regularly to stay on top of your finances.
+              </p>
             </div>
           </div>
         </div>
@@ -134,7 +138,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <div className="flex flex-1 flex-col lg:pl-64">
         {/* Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 lg:px-6 shadow-sm">
           <Button
             variant="ghost"
             size="icon"
@@ -145,21 +149,24 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </Button>
 
           <div className="ml-auto flex items-center gap-4">
+            <Button variant="ghost" size="icon" className="hidden lg:flex">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+            </Button>
             <div className="hidden items-center gap-3 lg:flex">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                <User className="h-4 w-4 text-primary" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+                <User className="h-4 w-4 text-white" />
               </div>
               <span className="text-sm font-medium">{username}</span>
             </div>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4 text-muted-foreground" />
+              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+        <main className="flex-1 p-4 lg:p-6" style={{ backgroundColor: "hsl(var(--main-bg))" }}>{children}</main>
       </div>
     </div>
   );

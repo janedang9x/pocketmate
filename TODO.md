@@ -114,7 +114,7 @@
 
 ## 📋 Phase 2: Account Management (Week 2)
 
-**Reference:** `docs/requirements.md` sections FR-ACC-001 through FR-ACC-004
+**Reference:** `docs/specification.md` sections FR-ACC-001 through FR-ACC-004
 **API Reference:** `docs/api-design.md` Financial Account Endpoints
 
 ### Sprint 2.1: Account Data Layer & API
@@ -215,34 +215,34 @@
 
 ## 📋 Phase 3: Transaction Management (Weeks 3-4)
 
-**Reference:** `docs/requirements.md` sections FR-TXN-001 through FR-TXN-007, FR-CAT-001 through FR-CAT-004  
+**Reference:** `docs/specification.md` sections FR-TXN-001 through FR-TXN-007, FR-CAT-001 through FR-CAT-004  
 **API Reference:** `docs/api-design.md` Transaction & Category Endpoints
 
 ### Sprint 3.1: Category Management
 
-- [ ] **Create Category Types & Components**
-  - [ ] Define Category interfaces in `/types/category.types.ts`
-  - [ ] Create Zod schemas in `/lib/schemas/category.schema.ts`
-  - [ ] Create `CategorySelector` component (hierarchical)
-  - [ ] Create `CategoryBadge` component for display
+- [x] **Create Category Types & Components**
+  - [x] Define Category interfaces in `/types/category.types.ts`
+  - [x] Create Zod schemas in `/lib/schemas/category.schema.ts`
+  - [x] Create `CategorySelector` component (hierarchical)
+  - [x] Create `CategoryBadge` component for display
 
-- [ ] **Build Category API Routes**
-  - [ ] Create `GET /api/categories/expense` - List expense categories (FR-CAT-001)
-  - [ ] Create `POST /api/categories/expense` - Create custom expense category (FR-CAT-002)
-  - [ ] Create `PUT /api/categories/expense/[id]` - Update expense category (FR-CAT-003)
-  - [ ] Create `DELETE /api/categories/expense/[id]` - Delete expense category (FR-CAT-004)
-  - [ ] Create `GET /api/categories/income` - List income categories (FR-CAT-001)
-  - [ ] Create `POST /api/categories/income` - Create custom income category (FR-CAT-002)
-  - [ ] Create `PUT /api/categories/income/[id]` - Update income category (FR-CAT-003)
-  - [ ] Create `DELETE /api/categories/income/[id]` - Delete income category (FR-CAT-004)
+- [x] **Build Category API Routes**
+  - [x] Create `GET /api/categories/expense` - List expense categories (FR-CAT-001)
+  - [x] Create `POST /api/categories/expense` - Create custom expense category (FR-CAT-002)
+  - [x] Create `PUT /api/categories/expense/[id]` - Update expense category (FR-CAT-003)
+  - [x] Create `DELETE /api/categories/expense/[id]` - Delete expense category (FR-CAT-004)
+  - [x] Create `GET /api/categories/income` - List income categories (FR-CAT-001)
+  - [x] Create `POST /api/categories/income` - Create custom income category (FR-CAT-002)
+  - [x] Create `PUT /api/categories/income/[id]` - Update income category (FR-CAT-003)
+  - [x] Create `DELETE /api/categories/income/[id]` - Delete income category (FR-CAT-004)
 
-- [ ] **Build Category Management UI**
-  - [ ] Create `/app/settings/categories/page.tsx`
-  - [ ] Display default categories (read-only)
-  - [ ] Display custom categories (editable)
-  - [ ] Add "Create Custom Category" form
-  - [ ] Implement edit/delete for custom categories
-  - [ ] Prevent deletion if category has transactions
+- [x] **Build Category Management UI**
+  - [x] Create `/app/settings/categories/page.tsx`
+  - [x] Display default categories (read-only)
+  - [x] Display custom categories (editable)
+  - [x] Add "Create Custom Category" form
+  - [x] Implement edit/delete for custom categories
+  - [x] Prevent deletion if category has transactions
 
 ### Sprint 3.2: Counterparty Management
 
@@ -374,7 +374,7 @@
 
 ## 📋 Phase 4: Reporting & Analytics (Weeks 5-6)
 
-**Reference:** `docs/requirements.md` sections FR-RPT-001 through FR-RPT-005  
+**Reference:** `docs/specification.md` sections FR-RPT-001 through FR-RPT-005  
 **API Reference:** `docs/api-design.md` Report Endpoints
 
 ### Sprint 4.1: Report Infrastructure

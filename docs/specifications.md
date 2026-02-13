@@ -348,22 +348,25 @@ The system shall provide default expense and income categories organized in a tw
 
 **Default Expense Categories (Parent → Children):**
 
-- Bills & Utilities → Electricity, Water, Gas, Internet, Phone
-- Coffee & Drinks → Coffee, Tea, Juice, Soft drinks
-- Dining → Restaurants, Fast food, Café, Bar
-- Education → Tuition, Books & Supplies, Courses & Training
-- Entertainment & Leisure → Movies, Concerts, Games, Hobbies & Interests, Travel, Parking & Toll
-- Fitness & Sports → Gym membership, Equipment
-- Gifts & Donations → Gifts, Charity
-- Groceries → Supermarket, Fresh produce, Meat & Seafood
-- Healthcare → Medications, Doctor visits, Insurance
-- Home & Garden → Furniture & Appliances, Repairs, Decor, Garden supplies
-- Kids → Toys, Childcare, School supplies
-- Lifestyle → Clothing, Beauty & Self-care, Entertainment & Leisure
-- Personal Care → Haircuts & Grooming, Skincare, Wellness
-- Pets → Pet food, Veterinary, Pet supplies
-- Shopping → Clothing, Electronics, Books, Holidays & Festivals, Events gatherings
-- Transportation → Fuel, Public transit, Taxi/Ride-share, Vehicle maintenance
+- Food & Drinks → Groceries, Delivery, Dining Out, Junk Food, Coffee & Drinks
+
+- Housing → Rent/Mortgage, Utilities, Furniture & Appliances, Property management fee, Home maintenance
+
+- Household → Household Supplies, Helper
+
+- Transportation → Fuel, Taxi & Public Transportation, Parking & Toll, Vehicle maintenance
+
+- Children → Tuition fee, Education supplies, Toys
+
+- Health → Medical checkups, Medications, Sports & Fitness
+
+- Lifestyle → Travel, Entertainment & Leisure, Beauty & Self-care
+
+- Family & Social → Gifts, Weddings & Funerals, Holiday & Festivals (Tet...), Family gatherings, Social gatherings
+
+- Personal Development → Courses & Training, Books, Subscriptions
+
+- Others → Other
 
 **Default Income Categories:**
 
