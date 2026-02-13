@@ -166,34 +166,34 @@
 
 ### Sprint 2.3: Account CRUD Operations
 
-- [ ] **Create Account Flow** (FR-ACC-001)
-  - [ ] Create `/app/accounts/new/page.tsx`
-  - [ ] Implement create account form
-  - [ ] Handle opening balance transaction creation
-  - [ ] Show success message and redirect
-  - [ ] Handle validation errors
+- [x] **Create Account Flow** (FR-ACC-001)
+  - [x] Create `/app/accounts/new/page.tsx`
+  - [x] Implement create account form
+  - [x] Handle opening balance transaction creation
+  - [x] Show success message and redirect
+  - [x] Handle validation errors
 
-- [ ] **View Account Details** (FR-ACC-002)
-  - [ ] Create `/app/accounts/[id]/page.tsx`
-  - [ ] Display account information
-  - [ ] Show current balance calculation
-  - [ ] Show transaction count
-  - [ ] Add "Edit" and "Delete" buttons
+- [x] **View Account Details** (FR-ACC-002)
+  - [x] Create `/app/accounts/[id]/page.tsx`
+  - [x] Display account information
+  - [x] Show current balance calculation
+  - [x] Show transaction count
+  - [x] Add "Edit" and "Delete" buttons
 
-- [ ] **Edit Account Flow** (FR-ACC-003)
-  - [ ] Create `/app/accounts/[id]/edit/page.tsx`
-  - [ ] Pre-fill form with existing data
-  - [ ] Implement update mutation
-  - [ ] Prevent currency change if transactions exist
-  - [ ] Prevent opening balance change if transactions exist
-  - [ ] Show validation errors
+- [x] **Edit Account Flow** (FR-ACC-003)
+  - [x] Create `/app/accounts/[id]/edit/page.tsx`
+  - [x] Pre-fill form with existing data
+  - [x] Implement update mutation
+  - [x] Prevent currency change if transactions exist
+  - [x] Prevent opening balance change if transactions exist
+  - [x] Show validation errors
 
-- [ ] **Delete Account Flow** (FR-ACC-004)
-  - [ ] Create delete confirmation dialog
-  - [ ] Implement delete mutation
-  - [ ] Prevent deletion if transactions exist
-  - [ ] Show helpful error message with transaction count
-  - [ ] Redirect to accounts list after successful deletion
+- [x] **Delete Account Flow** (FR-ACC-004)
+  - [x] Create delete confirmation dialog
+  - [x] Implement delete mutation
+  - [x] Prevent deletion if transactions exist
+  - [x] Show helpful error message with transaction count
+  - [x] Redirect to accounts list after successful deletion
 
 ### Sprint 2.4: Account Dashboard Integration
 

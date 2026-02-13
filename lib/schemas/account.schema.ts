@@ -5,7 +5,7 @@ import type { AccountType, Currency } from "@/types/account.types";
  * Account type schema matching database CHECK constraint
  * Implements FR-ACC-001: Create Financial Account
  */
-export const accountTypeSchema = z.enum(["Bank Account", "Credit Card", "E-wallet", "Cash"]);
+export const accountTypeSchema = z.enum(["Bank Account", "Credit Card", "E-wallet", "Cash", "Others"]);
 
 /**
  * Currency schema - supports VND, USD, mace

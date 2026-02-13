@@ -1,4 +1,4 @@
-import { Building2, CreditCard, Wallet, Banknote } from "lucide-react";
+import { Building2, CreditCard, Wallet, Banknote, CircleDot } from "lucide-react";
 import type { AccountType } from "@/types/account.types";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ export function AccountTypeIcon({ type, className, size = 20 }: AccountTypeIconP
     "Credit Card": CreditCard,
     "E-wallet": Wallet,
     Cash: Banknote,
+    Others: CircleDot,
   };
 
   const Icon = iconMap[type];

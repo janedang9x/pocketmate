@@ -50,7 +50,7 @@ Stores financial accounts (bank, credit card, cash, e-wallet).
 | ---------- | ------------ | --------------------- | ----------------------------------------- |
 | id         | UUID         | PRIMARY KEY           | Unique identifier                         |
 | user_id    | UUID         | FOREIGN KEY, NOT NULL | References user_account(id)               |
-| type       | VARCHAR(50)  | NOT NULL, CHECK       | Bank Account, Credit Card, E-wallet, Cash |
+| type       | VARCHAR(50)  | NOT NULL, CHECK       | Bank Account, Credit Card, E-wallet, Cash, Others |
 | name       | VARCHAR(200) | NOT NULL              | Account name                              |
 | currency   | VARCHAR(10)  | NOT NULL              | Currency code (VND, USD, EUR, etc.)       |
 | created_at | TIMESTAMP    | DEFAULT NOW()         | Creation timestamp                        |
@@ -63,7 +63,7 @@ Stores financial accounts (bank, credit card, cash, e-wallet).
 
 **Constraints:**
 
-- CHECK (type IN ('Bank Account', 'Credit Card', 'E-wallet', 'Cash'))
+- CHECK (type IN ('Bank Account', 'Credit Card', 'E-wallet', 'Cash', 'Others'))
 - FOREIGN KEY (user_id) REFERENCES user_account(id) ON DELETE CASCADE
 
 ---
@@ -222,7 +222,7 @@ CREATE TABLE user_account (
 CREATE TABLE financial_account (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES user_account(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL CHECK (type IN ('Bank Account', 'Credit Card', 'E-wallet', 'Cash')),
+    type VARCHAR(50) NOT NULL CHECK (type IN ('Bank Account', 'Credit Card', 'E-wallet', 'Cash', 'Others')),
     name VARCHAR(200) NOT NULL,
     currency VARCHAR(10) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

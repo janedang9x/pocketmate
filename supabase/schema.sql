@@ -18,7 +18,7 @@ CREATE TABLE user_account (
 CREATE TABLE financial_account (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES user_account(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL CHECK (type IN ('Bank Account', 'Credit Card', 'E-wallet', 'Cash')),
+    type VARCHAR(50) NOT NULL CHECK (type IN ('Bank Account', 'Credit Card', 'E-wallet', 'Cash', 'Others')),
     name VARCHAR(200) NOT NULL,
     currency VARCHAR(10) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -210,12 +210,20 @@ export async function DELETE(
       .eq("user_id", user.id)
       .or(`from_account_id.eq.${id},to_account_id.eq.${id}`);
 
-    if ((count ?? 0) > 0) {
-      return jsonError(
-        400,
-        `Cannot delete account with ${count} existing transaction(s). Please delete transactions first.`,
-        "FOREIGN_KEY_ERROR",
-      );
+    const transactionCount = count ?? 0;
+
+    // Delete all transactions associated with this account (cascade delete)
+    if (transactionCount > 0) {
+      const { error: deleteTransactionsError } = await supabase
+        .from("transaction")
+        .delete()
+        .eq("user_id", user.id)
+        .or(`from_account_id.eq.${id},to_account_id.eq.${id}`);
+
+      if (deleteTransactionsError) {
+        console.error("Error deleting transactions:", deleteTransactionsError);
+        return jsonError(500, "Failed to delete associated transactions", "SERVER_ERROR");
+      }
     }
 
     // Delete account
@@ -230,7 +238,12 @@ export async function DELETE(
       return jsonError(500, "Failed to delete account", "SERVER_ERROR");
     }
 
-    return jsonSuccess(null, "Account deleted successfully");
+    return jsonSuccess(
+      { transactionCount },
+      transactionCount > 0
+        ? `Account and ${transactionCount} associated transaction(s) deleted successfully`
+        : "Account deleted successfully",
+    );
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return jsonError(401, "Authentication required", "UNAUTHORIZED");

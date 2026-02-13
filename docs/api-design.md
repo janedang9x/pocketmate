@@ -151,7 +151,7 @@ List all financial accounts for the authenticated user.
 
 **Query Parameters:**
 
-- `type` (optional): Filter by account type (Bank Account, Credit Card, E-wallet, Cash)
+- `type` (optional): Filter by account type (Bank Account, Credit Card, E-wallet, Cash, Others)
 - `search` (optional): Search by account name
 
 **Response (200 OK):**
@@ -186,7 +186,7 @@ Create a new financial account.
 ```json
 {
   "name": "string (required, max 200 chars)",
-  "type": "string (required: 'Bank Account' | 'Credit Card' | 'E-wallet' | 'Cash')",
+  "type": "string (required: 'Bank Account' | 'Credit Card' | 'E-wallet' | 'Cash' | 'Others')",
   "currency": "string (required, e.g., 'VND', 'USD', 'EUR')",
   "openingBalance": "number (required)"
 }
@@ -1048,7 +1048,7 @@ import { z } from "zod";
 
 const createAccountSchema = z.object({
   name: z.string().min(1).max(200),
-  type: z.enum(["Bank Account", "Credit Card", "E-wallet", "Cash"]),
+  type: z.enum(["Bank Account", "Credit Card", "E-wallet", "Cash", "Others"]),
   currency: z.string().length(3),
   openingBalance: z.number(),
 });

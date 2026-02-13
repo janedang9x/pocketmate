@@ -26,7 +26,7 @@ PocketMate is a modern web-based financial management application designed to he
 ### Key Highlights
 
 - Simple user authentication (username/password)
-- Support for multiple financial account types (Bank, Credit Card, E-wallet, Cash)
+- Support for multiple financial account types (Bank Account, Credit Card, E-wallet, Cash, Others)
 - Multi-currency support with exchange rate tracking
 - Comprehensive transaction tracking (Expense, Income, Borrow, Transfer)
 - Hierarchical category system with customization
@@ -158,7 +158,7 @@ Users shall be able to create financial accounts to track their money across dif
 
 **Acceptance Criteria:**
 
-- User can select account type (Bank Account, Credit Card, E-wallet, Cash)
+- User can select account type (Bank Account, Credit Card, E-wallet, Cash, Others)
 - User can enter account name
 - User can select currency (VND, USD, mace)
 - User can set opening balance
@@ -199,14 +199,15 @@ Users shall be able to edit account details.
 
 **Priority:** Medium
 
-Users shall be able to delete financial accounts.
+Users shall be able to delete financial accounts. When an account with transactions is deleted, all associated transactions are automatically deleted (cascade delete).
 
 **Acceptance Criteria:**
 
-- System prevents deletion if transactions exist (must delete transactions first)
 - User receives confirmation prompt before deletion
+- If account has transactions, system displays warning that all transactions will be deleted
+- System deletes all transactions associated with the account (from_account_id or to_account_id)
 - System removes the account from database
-- System displays success message
+- System displays success message indicating account and transaction deletion count
 
 ---
 

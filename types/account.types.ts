@@ -4,7 +4,7 @@ import type { Database } from "./database.types";
  * Account type constants matching database CHECK constraint
  * Implements FR-ACC-001: Create Financial Account
  */
-export const ACCOUNT_TYPES = ["Bank Account", "Credit Card", "E-wallet", "Cash"] as const;
+export const ACCOUNT_TYPES = ["Bank Account", "Credit Card", "E-wallet", "Cash", "Others"] as const;
 
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
 
