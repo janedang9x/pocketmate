@@ -246,39 +246,39 @@
 
 ### Sprint 3.2: Counterparty Management
 
-- [ ] **Create Counterparty Components**
-  - [ ] Define Counterparty interface in `/types/counterparty.types.ts`
-  - [ ] Create Zod schema in `/lib/schemas/counterparty.schema.ts`
-  - [ ] Create `CounterpartySelector` component
+- [x] **Create Counterparty Components**
+  - [x] Define Counterparty interface in `/types/counterparty.types.ts`
+  - [x] Create Zod schema in `/lib/schemas/counterparty.schema.ts`
+  - [x] Create `CounterpartySelector` component
 
-- [ ] **Build Counterparty API Routes** (See `docs/api-design.md`)
-  - [ ] Create `GET /api/counterparties` - List counterparties (FR-CPT-002)
-  - [ ] Create `POST /api/counterparties` - Create counterparty (FR-CPT-001)
-  - [ ] Create `PUT /api/counterparties/[id]` - Update counterparty (FR-CPT-003)
-  - [ ] Create `DELETE /api/counterparties/[id]` - Delete counterparty (FR-CPT-004)
+- [x] **Build Counterparty API Routes** (See `docs/api-design.md`)
+  - [x] Create `GET /api/counterparties` - List counterparties (FR-CPT-002)
+  - [x] Create `POST /api/counterparties` - Create counterparty (FR-CPT-001)
+  - [x] Create `PUT /api/counterparties/[id]` - Update counterparty (FR-CPT-003)
+  - [x] Create `DELETE /api/counterparties/[id]` - Delete counterparty (FR-CPT-004)
 
-- [ ] **Build Counterparty Management UI**
-  - [ ] Create `/app/settings/counterparties/page.tsx`
-  - [ ] Display counterparty list with transaction counts
-  - [ ] Add create/edit/delete functionality
-  - [ ] Prevent deletion if counterparty has transactions
+- [x] **Build Counterparty Management UI**
+  - [x] Create `/app/settings/counterparties/page.tsx`
+  - [x] Display counterparty list with transaction counts
+  - [x] Add create/edit/delete functionality
+  - [x] Prevent deletion if counterparty has transactions
 
 ### Sprint 3.3: Transaction Data Layer
 
-- [ ] **Create Transaction Types & Schemas**
-  - [ ] Define Transaction interfaces in `/types/transaction.types.ts`
-  - [ ] Create base Zod schemas in `/lib/schemas/transaction.schema.ts`
-  - [ ] Create type-specific schemas (Expense, Income, Transfer, Borrow)
-  - [ ] Add transaction type constants
+- [x] **Create Transaction Types & Schemas**
+  - [x] Define Transaction interfaces in `/types/transaction.types.ts`
+  - [x] Create base Zod schemas in `/lib/schemas/transaction.schema.ts`
+  - [x] Create type-specific schemas (Expense, Income, Transfer, Borrow)
+  - [x] Add transaction type constants
 
-- [ ] **Build Transaction API Routes** (See `docs/api-design.md`)
-  - [ ] Create `GET /api/transactions` - List with filtering & pagination (FR-TXN-005)
-  - [ ] Create `POST /api/transactions` - Create transaction (FR-TXN-001 to FR-TXN-004)
-  - [ ] Create `GET /api/transactions/[id]` - Get transaction details (FR-TXN-005)
-  - [ ] Create `PUT /api/transactions/[id]` - Update transaction (FR-TXN-006)
-  - [ ] Create `DELETE /api/transactions/[id]` - Delete transaction (FR-TXN-007)
-  - [ ] Implement balance recalculation on create/update/delete
-  - [ ] Handle transfer transactions (linked records)
+- [x] **Build Transaction API Routes** (See `docs/api-design.md`)
+  - [x] Create `GET /api/transactions` - List with filtering & pagination (FR-TXN-005)
+  - [x] Create `POST /api/transactions` - Create transaction (FR-TXN-001 to FR-TXN-004)
+  - [x] Create `GET /api/transactions/[id]` - Get transaction details (FR-TXN-005)
+  - [x] Create `PUT /api/transactions/[id]` - Update transaction (FR-TXN-006)
+  - [x] Create `DELETE /api/transactions/[id]` - Delete transaction (FR-TXN-007)
+  - [x] Implement balance recalculation on create/update/delete
+  - [x] Handle transfer transactions (linked records)
 
 ### Sprint 3.4: Transaction UI - Create Flows
 

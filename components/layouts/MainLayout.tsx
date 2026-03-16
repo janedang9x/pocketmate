@@ -17,6 +17,8 @@ import {
   User,
   Bell,
   FileText,
+  FolderTree,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +33,8 @@ const navItems: NavItem[] = [
   { label: "Accounts", href: "/accounts", icon: Wallet },
   { label: "Transactions", href: "/transactions", icon: Receipt },
   { label: "Reports", href: "/reports", icon: BarChart3 },
+  { label: "Categories", href: "/settings/categories", icon: FolderTree },
+  { label: "Counterparties", href: "/settings/counterparties", icon: Users },
 ];
 
 /**

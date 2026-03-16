@@ -10,7 +10,7 @@ export const createExpenseCategorySchema = z.object({
     .trim()
     .min(1, "Category name is required")
     .max(200, "Category name must be at most 200 characters"),
-  parentCategoryId: z.string().uuid("Invalid parent category ID").nullable().optional(),
+  parentCategoryId: z.string().min(1).nullable().optional(),
 });
 
 export type CreateExpenseCategoryInput = z.infer<typeof createExpenseCategorySchema>;
@@ -26,7 +26,7 @@ export const updateExpenseCategorySchema = z.object({
     .min(1, "Category name is required")
     .max(200, "Category name must be at most 200 characters")
     .optional(),
-  parentCategoryId: z.string().uuid("Invalid parent category ID").nullable().optional(),
+  parentCategoryId: z.string().min(1).nullable().optional(),
 });
 
 export type UpdateExpenseCategoryInput = z.infer<typeof updateExpenseCategorySchema>;

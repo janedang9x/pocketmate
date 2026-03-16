@@ -574,6 +574,9 @@ function ExpenseCategoryDialog({
   async function handleSubmit(
     values: CreateExpenseCategoryInput | UpdateExpenseCategoryInput,
   ) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/c56f0928-d79a-49ad-9aae-38efc54ee0e6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c5492e'},body:JSON.stringify({sessionId:'c5492e',location:'categories/page.tsx:handleSubmit',message:'Form passed validation - values submitted',data:{values},timestamp:Date.now(),hypothesisId:'H-A,H-D'})}).catch(()=>{});
+    // #endregion
     try {
       await onSubmit(values);
       form.reset();
@@ -581,6 +584,12 @@ function ExpenseCategoryDialog({
       // Error is handled by mutation
     }
   }
+
+  // #region agent log
+  function onInvalid(errors: any) {
+    fetch('http://127.0.0.1:7242/ingest/c56f0928-d79a-49ad-9aae-38efc54ee0e6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c5492e'},body:JSON.stringify({sessionId:'c5492e',location:'categories/page.tsx:onInvalid',message:'Form FAILED validation - zod errors',data:{errors,parentCategoryIdError:errors?.parentCategoryId,currentFieldValue:form.getValues('parentCategoryId')},timestamp:Date.now(),hypothesisId:'H-A,H-D'})}).catch(()=>{});
+  }
+  // #endregion
 
   return (
     <DialogContent>
@@ -592,7 +601,7 @@ function ExpenseCategoryDialog({
             : "Create a new custom expense category. You can create a parent category or a child category under an existing parent."}
         </DialogDescription>
       </DialogHeader>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit, onInvalid)} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Category Name</Label>
           <Input id="name" placeholder="e.g. Subscriptions" {...form.register("name")} />
@@ -608,7 +617,12 @@ function ExpenseCategoryDialog({
             name="parentCategoryId"
             render={({ field }) => (
               <Select
-                onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                onValueChange={(value) => {
+                  // #region agent log
+                  fetch('http://127.0.0.1:7242/ingest/c56f0928-d79a-49ad-9aae-38efc54ee0e6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c5492e'},body:JSON.stringify({sessionId:'c5492e',location:'categories/page.tsx:Select.onValueChange',message:'Select value changed',data:{rawValue:value,typeofValue:typeof value,sentToField:value === "none" ? null : value},timestamp:Date.now(),hypothesisId:'H-B,H-C'})}).catch(()=>{});
+                  // #endregion
+                  field.onChange(value === "none" ? null : value);
+                }}
                 value={field.value || "none"}
               >
                 <SelectTrigger>
