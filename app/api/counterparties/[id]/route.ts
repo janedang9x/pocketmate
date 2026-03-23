@@ -41,8 +41,10 @@ export async function PUT(
       return jsonError(404, "Counterparty not found", "NOT_FOUND");
     }
 
+    const counterpartyRow = existingCounterparty as CounterpartyRow;
+
     // Check for duplicate name if changing
-    if (validatedData.name.trim() !== existingCounterparty.name) {
+    if (validatedData.name.trim() !== counterpartyRow.name) {
       const duplicateCheck = await supabase
         .from("counterparty")
         .select("*")

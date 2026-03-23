@@ -107,7 +107,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <nav className="flex-1 space-y-2 p-4">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive =
+                item.href === "/reports"
+                  ? pathname.startsWith("/reports")
+                  : pathname === item.href;
               return (
                 <Link
                   key={item.href}

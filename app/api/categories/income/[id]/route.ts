@@ -47,13 +47,15 @@ export async function PUT(
       return jsonError(404, "Category not found", "NOT_FOUND");
     }
 
+    const categoryRow = existingCategory as IncomeCategoryRow;
+
     // Cannot edit default categories
-    if (existingCategory.user_id === null) {
+    if (categoryRow.user_id === null) {
       return jsonError(403, "Cannot edit default categories", "FORBIDDEN");
     }
 
     // Check for duplicate name if name is being changed
-    if (validatedData.name !== undefined && validatedData.name.trim() !== existingCategory.name) {
+    if (validatedData.name !== undefined && validatedData.name.trim() !== categoryRow.name) {
       const duplicateCheck = await supabase
         .from("income_categories")
         .select("*")
@@ -139,8 +141,10 @@ export async function DELETE(
       return jsonError(404, "Category not found", "NOT_FOUND");
     }
 
+    const deleteCategoryRow = category as IncomeCategoryRow;
+
     // Cannot delete default categories
-    if (category.user_id === null) {
+    if (deleteCategoryRow.user_id === null) {
       return jsonError(403, "Cannot delete default categories", "FORBIDDEN");
     }
 

@@ -9,6 +9,7 @@ import {
 import type { Database } from "@/types/database.types";
 
 type TransactionRow = Database["public"]["Tables"]["transaction"]["Row"];
+type TransactionInsert = Database["public"]["Tables"]["transaction"]["Insert"];
 
 /**
  * List transactions with filtering and pagination
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
 
     const { data: transaction, error } = await supabase
       .from("transaction")
-      .insert(payload)
+      .insert(payload as TransactionInsert)
       .select()
       .single();
 

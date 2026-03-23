@@ -122,6 +122,16 @@ export async function POST(req: NextRequest) {
 
     if (accountError || !account) {
       console.error("Error creating account:", accountError);
+
+      // Surface CHECK constraint failures more clearly (e.g. missing 'Others' in DB constraint)
+      if (accountError && "code" in accountError && accountError.code === "23514") {
+        return jsonError(
+          400,
+          "Invalid account type for current database constraint. Make sure the financial_account.type CHECK constraint includes 'Others'.",
+          "VALIDATION_ERROR",
+        );
+      }
+
       return jsonError(500, "Failed to create account", "SERVER_ERROR");
     }
 

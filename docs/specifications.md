@@ -228,8 +228,6 @@ Users shall be able to record expense transactions.
 - User can optionally select counterparty
 - User enters date and time
 - User can add notes/description
-- User can select payment method (Cash, Credit Card, Installment)
-- If Installment selected, user enters number of installments
 - System validates all required fields
 - System deducts amount from account balance
 - System saves transaction
@@ -265,8 +263,8 @@ Users shall be able to transfer money between their accounts.
 - User selects source account (from)
 - User selects destination account (to)
 - User enters amount in source account currency
-- If accounts have different currencies, user enters exchange rate
-- System calculates destination amount using exchange rate
+- If accounts have different currencies, user enters both source amount and destination amount
+- System automatically calculates and displays the exchange rate based on the two amounts
 - User enters date and time
 - User can add notes/description
 - System deducts from source account
@@ -281,7 +279,7 @@ Users shall be able to record borrowing or lending transactions.
 
 **Acceptance Criteria:**
 
-- User selects transaction type: Borrow
+- User selects transaction type: Borrow or Lend
 - User specifies if borrowing (receiving) or lending (giving)
 - User selects financial account
 - User enters amount

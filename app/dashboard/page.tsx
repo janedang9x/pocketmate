@@ -185,7 +185,7 @@ export default function DashboardPage() {
               </Link>
             </Button>
             <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
-              <Link href="/transactions">
+              <Link href="/transactions/new">
                 <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mb-3">
                   <Receipt className="h-6 w-6 text-white" />
                 </div>

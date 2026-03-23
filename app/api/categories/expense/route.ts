@@ -104,20 +104,26 @@ export async function POST(req: NextRequest) {
         return jsonError(404, "Parent category not found", "NOT_FOUND");
       }
 
+      const parentRow = parentCategory as ExpenseCategoryRow;
+
       // Ensure parent category is actually a parent (has no parent itself)
-      if (parentCategory.parent_category_id !== null) {
+      if (parentRow.parent_category_id !== null) {
         return jsonError(400, "Cannot create child category under a child category", "VALIDATION_ERROR");
       }
     }
 
     // Check for duplicate name at the same level (same parent or both root)
-    const duplicateCheck = await supabase
+    let duplicateQuery = supabase
       .from("expense_categories")
       .select("*")
       .eq("name", validatedData.name.trim())
-      .eq("user_id", user.id)
-      .eq("parent_category_id", validatedData.parentCategoryId || null)
-      .maybeSingle();
+      .eq("user_id", user.id);
+    duplicateQuery =
+      validatedData.parentCategoryId != null
+        ? duplicateQuery.eq("parent_category_id", validatedData.parentCategoryId)
+        : duplicateQuery.is("parent_category_id", null);
+
+    const duplicateCheck = await duplicateQuery.maybeSingle();
 
     if (duplicateCheck.data) {
       return jsonError(409, "Category with this name already exists at this level", "DUPLICATE_ERROR");

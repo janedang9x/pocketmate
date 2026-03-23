@@ -282,93 +282,91 @@
 
 ### Sprint 3.4: Transaction UI - Create Flows
 
-- [ ] **Create Transaction Form Base**
-  - [ ] Create `/components/transactions/TransactionForm.tsx`
-  - [ ] Add transaction type tabs (Expense, Income, Transfer, Borrow)
-  - [ ] Create dynamic form that changes based on type
-  - [ ] Add date/time picker
-  - [ ] Add notes/details field
+- [x] **Create Transaction Form Base**
+  - [x] Create `/components/transactions/TransactionForm.tsx`
+  - [x] Add transaction type tabs (Expense, Income, Transfer, Borrow/Lend)
+  - [x] Create dynamic form that changes based on type
+  - [x] Add date/time picker
+  - [x] Add notes/details field
 
-- [ ] **Expense Transaction Flow** (FR-TXN-001)
-  - [ ] Create `/app/transactions/new/page.tsx`
-  - [ ] Implement expense form fields:
-    - [ ] From account selector
-    - [ ] Amount input
-    - [ ] Expense category selector (hierarchical)
-    - [ ] Counterparty selector (optional)
-    - [ ] Payment method selector (Cash, Credit Card, Installment)
-    - [ ] Installment details (if selected)
-  - [ ] Implement form submission
-  - [ ] Update account balance
-  - [ ] Show success message
+- [x] **Expense Transaction Flow** (FR-TXN-001)
+  - [x] Create `/app/transactions/new/page.tsx`
+  - [x] Implement expense form fields:
+    - [x] From account selector
+    - [x] Amount input
+    - [x] Expense category selector (hierarchical)
+    - [x] Counterparty selector (optional)
+  - [x] Implement form submission
+  - [x] Update account balance
+  - [x] Show success message
 
-- [ ] **Income Transaction Flow** (FR-TXN-002)
-  - [ ] Implement income form fields:
-    - [ ] To account selector
-    - [ ] Amount input
-    - [ ] Income category selector
-    - [ ] Counterparty selector (optional)
-  - [ ] Implement form submission
-  - [ ] Update account balance
+- [x] **Income Transaction Flow** (FR-TXN-002)
+  - [x] Implement income form fields:
+    - [x] To account selector
+    - [x] Amount input
+    - [x] Income category selector
+    - [x] Counterparty selector (optional)
+  - [x] Implement form submission
+  - [x] Update account balance
 
-- [ ] **Transfer Transaction Flow** (FR-TXN-003)
-  - [ ] Implement transfer form fields:
-    - [ ] From account selector
-    - [ ] To account selector
-    - [ ] Amount input
-    - [ ] Currency exchange field (if currencies differ)
-    - [ ] Auto-calculate destination amount
-  - [ ] Implement form submission
-  - [ ] Update both account balances
-  - [ ] Create linked transaction records
+- [x] **Transfer Transaction Flow** (FR-TXN-003)
+  - [x] Implement transfer form fields:
+    - [x] From account selector
+    - [x] To account selector
+    - [x] Amount input
+    - [x] Currency exchange field (if currencies differ)
+    - [x] Auto-calculate destination amount
+  - [x] Implement form submission
+  - [x] Update both account balances
+  - [x] Create linked transaction records
 
-- [ ] **Borrow Transaction Flow** (FR-TXN-004)
-  - [ ] Implement borrow form fields:
-    - [ ] Toggle: Borrowing (receiving) vs Lending (giving)
-    - [ ] Account selector
-    - [ ] Amount input
-    - [ ] Counterparty selector (required)
-  - [ ] Implement form submission
-  - [ ] Update account balance
+- [x] **Borrow Transaction Flow** (FR-TXN-004)
+  - [x] Implement borrow form fields:
+    - [x] Toggle: Borrowing (receiving) vs Lending (giving)
+    - [x] Account selector
+    - [x] Amount input
+    - [x] Counterparty selector (required)
+  - [x] Implement form submission
+  - [x] Update account balance
 
 ### Sprint 3.5: Transaction UI - List & Details
 
-- [ ] **Create Transaction List Page** (FR-TXN-005)
-  - [ ] Create `/app/transactions/page.tsx`
-  - [ ] Fetch transactions with pagination
-  - [ ] Display transaction table/list
-  - [ ] Show: date, type, category, amount, account, balance after
-  - [ ] Add sorting (date, amount, category)
-  - [ ] Add filtering:
-    - [ ] Date range picker
-    - [ ] Transaction type filter
-    - [ ] Account filter
-    - [ ] Category filter
-    - [ ] Search by description
-  - [ ] Implement pagination controls
-  - [ ] Make responsive for mobile
+- [x] **Create Transaction List Page** (FR-TXN-005)
+  - [x] Create `/app/transactions/page.tsx`
+  - [x] Fetch transactions with pagination
+  - [x] Display transaction table/list
+  - [x] Show: date, type, category, amount, account, balance after (placeholder for balance)
+  - [x] Add sorting (date, amount, category)
+  - [x] Add filtering:
+    - [x] Date range picker
+    - [x] Transaction type filter
+    - [x] Account filter
+    - [x] Category filter
+    - [x] Search by description
+  - [x] Implement pagination controls
+  - [x] Make responsive for mobile
 
-- [ ] **Create Transaction Details Page**
-  - [ ] Create `/app/transactions/[id]/page.tsx`
-  - [ ] Display full transaction information
-  - [ ] Show related account(s) with links
-  - [ ] Show category with hierarchy
-  - [ ] Add "Edit" and "Delete" buttons
-
-- [ ] **Edit Transaction Flow** (FR-TXN-006)
-  - [ ] Create `/app/transactions/[id]/edit/page.tsx`
-  - [ ] Pre-fill form with existing data
-  - [ ] Prevent changing transaction type
-  - [ ] Implement update mutation
+- [x] **Create Transaction Details Page**
+  - [x] Create `/app/transactions/[id]/page.tsx`
+  - [x] Display full transaction information
+  - [x] Show related account(s) with links
+  - [x] Show category with hierarchy
+  - [x] Add "Edit" and "Delete" buttons
+ 
+- [x] **Edit Transaction Flow** (FR-TXN-006)
+  - [x] Create `/app/transactions/[id]/edit/page.tsx`
+  - [x] Pre-fill form with existing data
+  - [x] Prevent changing transaction type
+  - [x] Implement update mutation
   - [ ] Recalculate account balances
   - [ ] Handle transfer transaction updates (both records)
-
-- [ ] **Delete Transaction Flow** (FR-TXN-007)
-  - [ ] Create delete confirmation dialog
-  - [ ] Implement delete mutation
+ 
+- [x] **Delete Transaction Flow** (FR-TXN-007)
+  - [x] Create delete confirmation dialog
+  - [x] Implement delete mutation
   - [ ] Reverse impact on account balance
   - [ ] Handle transfer transaction deletion (both records)
-  - [ ] Redirect to transaction list
+  - [x] Redirect to transaction list
 
 ---
 
@@ -379,59 +377,59 @@
 
 ### Sprint 4.1: Report Infrastructure
 
-- [ ] **Install Chart Library**
-  - [ ] Run `npm install recharts`
-  - [ ] Create chart wrapper components in `/components/charts/`
-  - [ ] Create `PieChart` component
-  - [ ] Create `LineChart` component
-  - [ ] Create `BarChart` component
-  - [ ] Make all charts responsive
+- [x] **Install Chart Library**
+  - [x] Run `npm install recharts`
+  - [x] Create chart wrapper components in `/components/charts/`
+  - [x] Create `PieChart` component
+  - [x] Create `LineChart` component
+  - [x] Create `BarChart` component
+  - [x] Make all charts responsive
 
-- [ ] **Create Report Utilities**
-  - [ ] Create `/lib/utils/report.utils.ts`
-  - [ ] Add date grouping functions (day, week, month, year)
-  - [ ] Add percentage calculation helpers
-  - [ ] Add data aggregation functions
-  - [ ] Add trend calculation functions
+- [x] **Create Report Utilities**
+  - [x] Create `/lib/utils/report.utils.ts`
+  - [x] Add date grouping functions (day, week, month, year)
+  - [x] Add percentage calculation helpers
+  - [x] Add data aggregation functions
+  - [x] Add trend calculation functions
 
-- [ ] **Create Report Components**
-  - [ ] Create `DateRangePicker` component
-  - [ ] Create `ReportSummaryCard` component
-  - [ ] Create `CategoryBreakdown` component
-  - [ ] Create `OvertimeChart` component
-  - [ ] Create `FilterPanel` component
+- [x] **Create Report Components**
+  - [x] Create `DateRangePicker` component
+  - [x] Create `ReportSummaryCard` component
+  - [x] Create `CategoryBreakdown` component
+  - [x] Create `OvertimeChart` component
+  - [x] Create `FilterPanel` component
 
 ### Sprint 4.2: Expense Report
 
-- [ ] **Build Expense Report API** (FR-RPT-001)
-  - [ ] Create `GET /api/reports/expense`
-  - [ ] Implement date range filtering
-  - [ ] Implement category filtering
-  - [ ] Calculate summary metrics:
-    - [ ] Total expense
-    - [ ] Transaction count
-    - [ ] Average expense
-  - [ ] Calculate by category breakdown:
-    - [ ] Amount per category
-    - [ ] Percentage of total
-    - [ ] Transaction count per category
-  - [ ] Calculate overtime data:
-    - [ ] Group by day/week/month/year
-    - [ ] Sum amounts per period
-    - [ ] Count transactions per period
+- [x] **Build Expense Report API** (FR-RPT-001)
+  - [x] Create `GET /api/reports/expense`
+  - [x] Implement date range filtering
+  - [x] Implement category filtering
+  - [x] Calculate summary metrics:
+    - [x] Total expense
+    - [x] Transaction count
+    - [x] Average expense
+  - [x] Calculate by category breakdown:
+    - [x] Amount per category
+    - [x] Percentage of total
+    - [x] Transaction count per category
+  - [x] Calculate overtime data:
+    - [x] Group by day/week/month/year
+    - [x] Sum amounts per period
+    - [x] Count transactions per period
 
-- [ ] **Build Expense Report UI** (FR-RPT-001)
-  - [ ] Create `/app/reports/expense/page.tsx`
-  - [ ] Add date range selector
-  - [ ] Add grouping selector (day, week, month, year)
-  - [ ] Add category multi-select filter
-  - [ ] Display summary cards (total, count, average)
-  - [ ] Display category breakdown pie chart
-  - [ ] Display expense overtime line/bar chart
-  - [ ] Add drill-down to view transactions per category
-  - [ ] Group by parent category by default
-  - [ ] Allow drill-down to child categories
-  - [ ] Make responsive for mobile
+- [x] **Build Expense Report UI** (FR-RPT-001)
+  - [x] Create `/app/reports/expense/page.tsx`
+  - [x] Add date range selector
+  - [x] Add grouping selector (day, week, month, year)
+  - [x] Add category multi-select filter
+  - [x] Display summary cards (total, count, average)
+  - [x] Display category breakdown pie chart
+  - [x] Display expense overtime line/bar chart
+  - [x] Add drill-down to view transactions per category
+  - [x] Group by parent category by default
+  - [x] Allow drill-down to child categories
+  - [x] Make responsive for mobile
 
 ### Sprint 4.3: Income Report
 

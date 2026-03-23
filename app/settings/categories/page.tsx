@@ -316,7 +316,9 @@ export default function CategoriesPage() {
                       data,
                     });
                   } else {
-                    await createExpenseMutation.mutateAsync(data);
+                    await createExpenseMutation.mutateAsync(
+                      data as CreateExpenseCategoryInput,
+                    );
                   }
                 }}
                 isLoading={createExpenseMutation.isPending || updateExpenseMutation.isPending}
@@ -423,7 +425,9 @@ export default function CategoriesPage() {
                       data,
                     });
                   } else {
-                    await createIncomeMutation.mutateAsync(data);
+                    await createIncomeMutation.mutateAsync(
+                      data as CreateIncomeCategoryInput,
+                    );
                   }
                 }}
                 isLoading={createIncomeMutation.isPending || updateIncomeMutation.isPending}

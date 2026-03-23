@@ -47,13 +47,15 @@ export async function PUT(
       return jsonError(404, "Category not found", "NOT_FOUND");
     }
 
+    const categoryRow = existingCategory as ExpenseCategoryRow;
+
     // Cannot edit default categories
-    if (existingCategory.user_id === null) {
+    if (categoryRow.user_id === null) {
       return jsonError(403, "Cannot edit default categories", "FORBIDDEN");
     }
 
     // If parentCategoryId is being changed, verify it exists and is accessible
-    if (validatedData.parentCategoryId !== undefined && validatedData.parentCategoryId !== existingCategory.parent_category_id) {
+    if (validatedData.parentCategoryId !== undefined && validatedData.parentCategoryId !== categoryRow.parent_category_id) {
       if (validatedData.parentCategoryId) {
         const { data: parentCategory, error: parentError } = await supabase
           .from("expense_categories")
@@ -66,32 +68,38 @@ export async function PUT(
           return jsonError(404, "Parent category not found", "NOT_FOUND");
         }
 
+        const parentRow = parentCategory as ExpenseCategoryRow;
+
         // Ensure parent category is actually a parent
-        if (parentCategory.parent_category_id !== null) {
+        if (parentRow.parent_category_id !== null) {
           return jsonError(400, "Cannot move category under a child category", "VALIDATION_ERROR");
         }
 
         // Prevent circular reference (cannot be its own parent)
-        if (parentCategory.id === id) {
+        if (parentRow.id === id) {
           return jsonError(400, "Category cannot be its own parent", "VALIDATION_ERROR");
         }
       }
     }
 
     // Check for duplicate name at the same level if name is being changed
-    if (validatedData.name !== undefined && validatedData.name.trim() !== existingCategory.name) {
+    if (validatedData.name !== undefined && validatedData.name.trim() !== categoryRow.name) {
       const newParentId = validatedData.parentCategoryId !== undefined 
         ? validatedData.parentCategoryId 
-        : existingCategory.parent_category_id;
+        : categoryRow.parent_category_id;
 
-      const duplicateCheck = await supabase
+      let duplicateQuery = supabase
         .from("expense_categories")
         .select("*")
         .eq("name", validatedData.name.trim())
         .eq("user_id", user.id)
-        .eq("parent_category_id", newParentId || null)
-        .neq("id", id)
-        .maybeSingle();
+        .neq("id", id);
+      duplicateQuery =
+        newParentId != null
+          ? duplicateQuery.eq("parent_category_id", newParentId)
+          : duplicateQuery.is("parent_category_id", null);
+
+      const duplicateCheck = await duplicateQuery.maybeSingle();
 
       if (duplicateCheck.data) {
         return jsonError(409, "Category with this name already exists at this level", "DUPLICATE_ERROR");
@@ -173,8 +181,10 @@ export async function DELETE(
       return jsonError(404, "Category not found", "NOT_FOUND");
     }
 
+    const deleteCategoryRow = category as ExpenseCategoryRow;
+
     // Cannot delete default categories
-    if (category.user_id === null) {
+    if (deleteCategoryRow.user_id === null) {
       return jsonError(403, "Cannot delete default categories", "FORBIDDEN");
     }
 

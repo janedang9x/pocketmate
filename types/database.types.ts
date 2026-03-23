@@ -36,7 +36,7 @@ export type Database = {
           id: string;
           name: string;
           currency: string;
-          type: "Bank Account" | "Credit Card" | "E-wallet" | "Cash";
+          type: "Bank Account" | "Credit Card" | "E-wallet" | "Cash" | "Others";
           updated_at: string | null;
           user_id: string;
         };
@@ -45,7 +45,7 @@ export type Database = {
           id?: string;
           name: string;
           currency: string;
-          type: "Bank Account" | "Credit Card" | "E-wallet" | "Cash";
+          type: "Bank Account" | "Credit Card" | "E-wallet" | "Cash" | "Others";
           updated_at?: string | null;
           user_id: string;
         };
@@ -54,7 +54,7 @@ export type Database = {
           id?: string;
           name?: string;
           currency?: string;
-          type?: "Bank Account" | "Credit Card" | "E-wallet" | "Cash";
+          type?: "Bank Account" | "Credit Card" | "E-wallet" | "Cash" | "Others";
           updated_at?: string | null;
           user_id?: string;
         };
