@@ -433,82 +433,82 @@
 
 ### Sprint 4.3: Income Report
 
-- [ ] **Build Income Report API** (FR-RPT-002)
-  - [ ] Create `GET /api/reports/income`
-  - [ ] Implement date range filtering
-  - [ ] Implement category filtering
-  - [ ] Calculate summary metrics (total, count, average)
-  - [ ] Calculate by category breakdown
-  - [ ] Calculate overtime data
+- [x] **Build Income Report API** (FR-RPT-002)
+  - [x] Create `GET /api/reports/income`
+  - [x] Implement date range filtering
+  - [x] Implement category filtering
+  - [x] Calculate summary metrics (total, count, average)
+  - [x] Calculate by category breakdown
+  - [x] Calculate overtime data
 
-- [ ] **Build Income Report UI** (FR-RPT-002)
-  - [ ] Create `/app/reports/income/page.tsx`
-  - [ ] Add date range selector
-  - [ ] Add grouping selector
-  - [ ] Add category multi-select filter
-  - [ ] Display summary cards
-  - [ ] Display category breakdown pie chart
-  - [ ] Display income overtime line/bar chart
-  - [ ] Add drill-down to view transactions per category
-  - [ ] Make responsive for mobile
+- [x] **Build Income Report UI** (FR-RPT-002)
+  - [x] Create `/app/reports/income/page.tsx`
+  - [x] Add date range selector
+  - [x] Add grouping selector
+  - [x] Add category multi-select filter
+  - [x] Display summary cards
+  - [x] Display category breakdown pie chart
+  - [x] Display income overtime line/bar chart
+  - [x] Add drill-down to view transactions per category
+  - [x] Make responsive for mobile
 
 ### Sprint 4.4: Comparison Report
 
-- [ ] **Build Comparison Report API** (FR-RPT-003)
-  - [ ] Create `GET /api/reports/comparison`
-  - [ ] Implement date range filtering
-  - [ ] Implement grouping (day, week, month, year)
-  - [ ] Calculate summary metrics:
-    - [ ] Total income
-    - [ ] Total expense
-    - [ ] Net savings
-    - [ ] Savings rate percentage
-  - [ ] Calculate overtime comparison:
-    - [ ] Income per period
-    - [ ] Expense per period
-    - [ ] Net per period
+- [x] **Build Comparison Report API** (FR-RPT-003)
+  - [x] Create `GET /api/reports/comparison`
+  - [x] Implement date range filtering
+  - [x] Implement grouping (day, week, month, year)
+  - [x] Calculate summary metrics:
+    - [x] Total income
+    - [x] Total expense
+    - [x] Net savings
+    - [x] Savings rate percentage
+  - [x] Calculate overtime comparison:
+    - [x] Income per period
+    - [x] Expense per period
+    - [x] Net per period
 
-- [ ] **Build Comparison Report UI** (FR-RPT-003)
-  - [ ] Create `/app/reports/comparison/page.tsx`
-  - [ ] Add date range selector
-  - [ ] Add grouping selector
-  - [ ] Display summary cards:
-    - [ ] Total income (green)
-    - [ ] Total expense (red)
-    - [ ] Net savings (blue)
-    - [ ] Savings rate (percentage)
-  - [ ] Display dual-axis chart (income vs expense overtime)
-  - [ ] Add trend indicators (↑ increasing / ↓ decreasing)
-  - [ ] Display percentage breakdown
-  - [ ] Make responsive for mobile
+- [x] **Build Comparison Report UI** (FR-RPT-003)
+  - [x] Create `/app/reports/comparison/page.tsx`
+  - [x] Add date range selector
+  - [x] Add grouping selector
+  - [x] Display summary cards:
+    - [x] Total income (green)
+    - [x] Total expense (red)
+    - [x] Net savings (blue)
+    - [x] Savings rate (percentage)
+  - [x] Display dual-axis chart (income vs expense overtime)
+  - [x] Add trend indicators (↑ increasing / ↓ decreasing)
+  - [x] Display percentage breakdown
+  - [x] Make responsive for mobile
 
 ### Sprint 4.5: Financial Statement
 
-- [ ] **Build Financial Statement API** (FR-RPT-004)
-  - [ ] Create `GET /api/reports/statement`
-  - [ ] Calculate assets:
-    - [ ] Fetch all financial accounts
-    - [ ] Calculate current balance for each
-    - [ ] Sum total assets
-  - [ ] Calculate liabilities:
-    - [ ] Sum amounts borrowed from others (by counterparty)
-    - [ ] Sum amounts lent to others (by counterparty)
-    - [ ] Calculate total liabilities
-  - [ ] Calculate net worth (Assets - Liabilities)
+- [x] **Build Financial Statement API** (FR-RPT-004)
+  - [x] Create `GET /api/reports/statement`
+  - [x] Calculate assets:
+    - [x] Fetch all financial accounts
+    - [x] Calculate current balance for each
+    - [x] Sum total assets
+  - [x] Calculate liabilities:
+    - [x] Sum amounts borrowed from others (by counterparty)
+    - [x] Sum amounts lent to others (by counterparty)
+    - [x] Calculate total liabilities
+  - [x] Calculate net worth (Assets - Liabilities)
 
-- [ ] **Build Financial Statement UI** (FR-RPT-004)
-  - [ ] Create `/app/reports/statement/page.tsx`
-  - [ ] Display Assets section:
-    - [ ] List all accounts with balances
-    - [ ] Group by account type
-    - [ ] Show total assets
-  - [ ] Display Liabilities section:
-    - [ ] List borrowed amounts by counterparty
-    - [ ] List lent amounts by counterparty
-    - [ ] Show total liabilities
-  - [ ] Display Net Worth prominently
-  - [ ] Add links to view transactions for each account/counterparty
-  - [ ] Make responsive for mobile
+- [x] **Build Financial Statement UI** (FR-RPT-004)
+  - [x] Create `/app/reports/statement/page.tsx`
+  - [x] Display Assets section:
+    - [x] List all accounts with balances
+    - [x] Group by account type
+    - [x] Show total assets
+  - [x] Display Liabilities section:
+    - [x] List borrowed amounts by counterparty
+    - [x] List lent amounts by counterparty
+    - [x] Show total liabilities
+  - [x] Display Net Worth prominently
+  - [x] Add links to view transactions for each account/counterparty
+  - [x] Make responsive for mobile
 
 ### Sprint 4.6: Transaction History Report
 
@@ -521,17 +521,17 @@
 
 ### Sprint 4.7: Dashboard Finalization
 
-- [ ] **Complete Dashboard Integration**
-  - [ ] Replace placeholder cards with real data
-  - [ ] Add quick stats widgets:
-    - [ ] Total balance
-    - [ ] Monthly income
-    - [ ] Monthly expense
-    - [ ] Net savings this month
-  - [ ] Add "Recent Transactions" list (last 10)
-  - [ ] Add mini charts (expense trend, top categories)
-  - [ ] Add quick links to all reports
-  - [ ] Make fully responsive
+- [x] **Complete Dashboard Integration**
+  - [x] Replace placeholder cards with real data
+  - [x] Add quick stats widgets:
+    - [x] Total balance
+    - [x] Monthly income
+    - [x] Monthly expense
+    - [x] Net savings this month
+  - [x] Add "Recent Transactions" list (last 10)
+  - [x] Add mini charts (expense trend, top categories)
+  - [x] Add quick links to all reports
+  - [x] Make fully responsive
 
 ---
 

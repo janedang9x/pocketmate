@@ -168,6 +168,7 @@ export const transactionQuerySchema = z.object({
   type: transactionTypeSchema.optional(),
   accountId: z.string().min(1).optional(),
   categoryId: z.string().min(1).optional(),
+  counterpartyId: z.string().min(1).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   search: z.string().optional(),

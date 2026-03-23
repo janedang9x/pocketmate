@@ -107,6 +107,7 @@ function TransactionsPageInner() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [accountFilter, setAccountFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [counterpartyFilter, setCounterpartyFilter] = useState<string>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [page, setPage] = useState<number>(1);
@@ -130,6 +131,11 @@ function TransactionsPageInner() {
     const categoryId = searchParams.get("categoryId");
     if (categoryId) {
       setCategoryFilter(categoryId);
+    }
+
+    const counterpartyId = searchParams.get("counterpartyId");
+    if (counterpartyId) {
+      setCounterpartyFilter(counterpartyId);
     }
 
     const sd = searchParams.get("startDate");
@@ -161,6 +167,9 @@ function TransactionsPageInner() {
   if (categoryFilter !== "all") {
     queryParams.set("categoryId", categoryFilter);
   }
+  if (counterpartyFilter !== "all") {
+    queryParams.set("counterpartyId", counterpartyFilter);
+  }
   if (startDate) {
     queryParams.set("startDate", startDate);
   }
@@ -182,6 +191,7 @@ function TransactionsPageInner() {
       typeFilter,
       accountFilter,
       categoryFilter,
+      counterpartyFilter,
       startDate,
       endDate,
       searchQuery,

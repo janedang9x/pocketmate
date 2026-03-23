@@ -5,10 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   endOfMonth,
+  endOfYear,
   format,
   startOfMonth,
   startOfYear,
-  endOfYear,
 } from "date-fns";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,22 +23,23 @@ import {
 import {
   CategoryBreakdown,
   DateRangePicker,
-  ExpenseCategoryDrilldown,
-  ExpenseCategoryFilterDropdown,
   FilterPanel,
+  IncomeCategoryFilterDropdown,
   OvertimeChart,
   ReportSummaryCard,
 } from "@/components/reports";
-import type { ExpenseCategoryWithChildren } from "@/types/category.types";
-import type { ExpenseReportData } from "@/types/report.types";
+import type { IncomeCategory } from "@/types/category.types";
+import type { IncomeReportData } from "@/types/report.types";
 import type { ReportGroupBy } from "@/lib/utils/report.utils";
 
-type ExpenseReportResponse =
-  | { success: true; data: ExpenseReportData }
+type IncomeCategoryWithFlags = IncomeCategory & { isDefault?: boolean };
+
+type IncomeReportResponse =
+  | { success: true; data: IncomeReportData }
   | { success: false; error: string; code: string };
 
-type ExpenseCategoriesResponse =
-  | { success: true; data: { categories: ExpenseCategoryWithChildren[] } }
+type IncomeCategoriesResponse =
+  | { success: true; data: { categories: IncomeCategoryWithFlags[] } }
   | { success: false; error: string; code: string };
 
 function defaultRange(): { start: string; end: string } {
@@ -50,9 +51,9 @@ function defaultRange(): { start: string; end: string } {
 }
 
 /**
- * Expense report dashboard (FR-RPT-001).
+ * Income report dashboard (FR-RPT-002).
  */
-export default function ExpenseReportPage() {
+export default function IncomeReportPage() {
   const initial = useMemo(() => defaultRange(), []);
   const [startDate, setStartDate] = useState(initial.start);
   const [endDate, setEndDate] = useState(initial.end);
@@ -66,15 +67,8 @@ export default function ExpenseReportPage() {
       ? [...selectedCategoryIds].sort().join(",")
       : "";
 
-  const reportQuery = useQuery<ExpenseReportResponse>({
-    queryKey: [
-      "reports",
-      "expense",
-      startDate,
-      endDate,
-      groupBy,
-      categoryIdsParam,
-    ],
+  const reportQuery = useQuery<IncomeReportResponse>({
+    queryKey: ["reports", "income", startDate, endDate, groupBy, categoryIdsParam],
     queryFn: async () => {
       const token = localStorage.getItem("pm_token");
       const params = new URLSearchParams({
@@ -82,16 +76,14 @@ export default function ExpenseReportPage() {
         endDate,
         groupBy,
       });
-      if (categoryIdsParam) {
-        params.set("categoryIds", categoryIdsParam);
-      }
-      const res = await fetch(`/api/reports/expense?${params}`, {
+      if (categoryIdsParam) params.set("categoryIds", categoryIdsParam);
+      const res = await fetch(`/api/reports/income?${params.toString()}`, {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
-      const json = (await res.json()) as ExpenseReportResponse;
+      const json = (await res.json()) as IncomeReportResponse;
       if (!res.ok) {
         throw new Error(
-          json.success === false ? json.error : "Failed to load expense report",
+          json.success === false ? json.error : "Failed to load income report",
         );
       }
       return json;
@@ -99,26 +91,23 @@ export default function ExpenseReportPage() {
     enabled: Boolean(startDate && endDate),
   });
 
-  const categoriesQuery = useQuery<ExpenseCategoriesResponse>({
-    queryKey: ["categories", "expense", "for-expense-report"],
+  const categoriesQuery = useQuery<IncomeCategoriesResponse>({
+    queryKey: ["categories", "income", "for-income-report"],
     queryFn: async () => {
       const token = localStorage.getItem("pm_token");
-      const res = await fetch("/api/categories/expense", {
+      const res = await fetch("/api/categories/income", {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
-      const json = (await res.json()) as ExpenseCategoriesResponse;
+      const json = (await res.json()) as IncomeCategoriesResponse;
       if (!res.ok) {
-        throw new Error(
-          json.success === false ? json.error : "Failed to load categories",
-        );
+        throw new Error(json.success === false ? json.error : "Failed to load categories");
       }
       return json;
     },
   });
 
   const report = reportQuery.data?.success === true ? reportQuery.data.data : null;
-
-  const expenseCategories =
+  const incomeCategories =
     categoriesQuery.data?.success === true ? categoriesQuery.data.data.categories : [];
 
   function setPresetThisMonth() {
@@ -160,12 +149,12 @@ export default function ExpenseReportPage() {
 
   const averagePerGroup =
     report && report.overtime.length > 0
-      ? report.summary.totalExpense / report.overtime.length
+      ? report.summary.totalIncome / report.overtime.length
       : 0;
 
   function transactionHref(categoryId: string): string {
     const p = new URLSearchParams();
-    p.set("type", "Expense");
+    p.set("type", "Income");
     p.set("categoryId", categoryId);
     if (startDate) p.set("startDate", startDate);
     if (endDate) p.set("endDate", endDate);
@@ -182,9 +171,9 @@ export default function ExpenseReportPage() {
               Reports
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">Expense report</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Income report</h1>
           <p className="mt-1 text-muted-foreground">
-            Totals, category mix, and spending over time
+            Totals, source mix, and income over time
           </p>
         </div>
       </div>
@@ -194,7 +183,7 @@ export default function ExpenseReportPage() {
           <div className="space-y-3">
             <Label className="text-xs text-muted-foreground">Date range</Label>
             <DateRangePicker
-              idPrefix="expense-report"
+              idPrefix="income-report"
               startDate={startDate}
               endDate={endDate}
               onStartDateChange={setStartDate}
@@ -233,8 +222,8 @@ export default function ExpenseReportPage() {
             {categoriesQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading categories…</p>
             ) : (
-              <ExpenseCategoryFilterDropdown
-                categories={expenseCategories}
+              <IncomeCategoryFilterDropdown
+                categories={incomeCategories}
                 selectedIds={selectedCategoryIds}
                 onSelectionChange={setSelectedCategoryIds}
                 disabled={reportQuery.isFetching}
@@ -245,9 +234,7 @@ export default function ExpenseReportPage() {
       </FilterPanel>
 
       {reportQuery.isError ? (
-        <p className="text-sm text-destructive">
-          {(reportQuery.error as Error).message}
-        </p>
+        <p className="text-sm text-destructive">{(reportQuery.error as Error).message}</p>
       ) : null}
 
       {reportQuery.isLoading || reportQuery.isFetching ? (
@@ -258,17 +245,17 @@ export default function ExpenseReportPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-3">
             <ReportSummaryCard
-              title="Total expense"
-              value={formatAmount(report.summary.totalExpense)}
+              title="Total income"
+              value={formatAmount(report.summary.totalIncome)}
               description="In selected range and filters"
             />
             <ReportSummaryCard
               title="Transactions"
               value={String(report.summary.transactionCount)}
-              description="Expense rows counted"
+              description="Income rows counted"
             />
             <ReportSummaryCard
-              title={`Average expense per ${groupBy}`}
+              title={`Average income per ${groupBy}`}
               value={formatAmount(averagePerGroup)}
               description={`Average in each ${groupBy} bucket`}
             />
@@ -276,22 +263,47 @@ export default function ExpenseReportPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <CategoryBreakdown
-              title="Category mix (parent groups)"
-              description="Shares of total expense by parent category"
+              title="Category mix"
+              description="Shares of total income by category"
               items={breakdownItems}
               formatAmount={formatAmount}
-              showList={false}
+              showList
             />
-            <ExpenseCategoryDrilldown
-              categories={report.byCategory}
-              buildTransactionHref={transactionHref}
-              formatAmount={formatAmount}
-            />
+            <div className="rounded-lg border bg-card p-4">
+              <h2 className="text-lg font-semibold">Drill-down</h2>
+              <p className="mb-4 mt-1 text-sm text-muted-foreground">
+                Open filtered transactions for each income category.
+              </p>
+              {report.byCategory.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No categories in range</p>
+              ) : (
+                <ul className="space-y-2">
+                  {report.byCategory.map((row) => (
+                    <li
+                      key={row.categoryId}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{row.categoryName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatAmount(row.amount)} ({row.percentage.toFixed(1)}%) -{" "}
+                          {row.transactionCount} transaction
+                          {row.transactionCount === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={transactionHref(row.categoryId)}>View transactions</Link>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
 
           <OvertimeChart
-            title="Expense over time"
-            description="Sum of expense amounts per period"
+            title="Income over time"
+            description="Sum of income amounts per period"
             data={overtimeData}
             variant={chartVariant}
             formatYAxis={(v) => formatAmount(v)}

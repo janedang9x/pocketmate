@@ -15,6 +15,7 @@ export interface ReportSummaryCardProps {
   title: string;
   /** Pre-formatted primary value (e.g. currency) */
   value: string;
+  valueClassName?: string;
   description?: string;
   trend?: {
     label: string;
@@ -41,6 +42,7 @@ function TrendIcon({ direction }: { direction: TrendDirection }) {
 export function ReportSummaryCard({
   title,
   value,
+  valueClassName,
   description,
   trend,
   className,
@@ -49,7 +51,9 @@ export function ReportSummaryCard({
     <Card className={cn(className)}>
       <CardHeader className="pb-2">
         <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-2xl font-semibold tabular-nums tracking-tight">
+        <CardTitle
+          className={cn("text-2xl font-semibold tabular-nums tracking-tight", valueClassName)}
+        >
           {value}
         </CardTitle>
       </CardHeader>

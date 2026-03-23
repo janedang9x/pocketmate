@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
       type: searchParams.get("type") ?? undefined,
       accountId: searchParams.get("accountId") ?? undefined,
       categoryId: searchParams.get("categoryId") ?? undefined,
+      counterpartyId: searchParams.get("counterpartyId") ?? undefined,
       startDate: searchParams.get("startDate") ?? undefined,
       endDate: searchParams.get("endDate") ?? undefined,
       search: searchParams.get("search") ?? undefined,
@@ -62,6 +63,10 @@ export async function GET(req: NextRequest) {
       query = query.or(
         `expense_category_id.eq.${validatedQuery.categoryId},income_category_id.eq.${validatedQuery.categoryId}`,
       );
+    }
+
+    if (validatedQuery.counterpartyId) {
+      query = query.eq("counterparty_id", validatedQuery.counterpartyId);
     }
 
     if (validatedQuery.startDate) {
