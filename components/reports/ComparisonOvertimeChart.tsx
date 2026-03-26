@@ -123,7 +123,8 @@ export function ComparisonOvertimeChart({
                 tickFormatter={formatAmount}
                 width={56}
               />
-              <Tooltip content={TooltipContent} />
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              <Tooltip content={TooltipContent as any} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar yAxisId="main" dataKey="income" name="Income" fill="#16a34a" radius={[4, 4, 0, 0]} />
               <Bar yAxisId="main" dataKey="expense" name="Expense" fill="#dc2626" radius={[4, 4, 0, 0]} />
