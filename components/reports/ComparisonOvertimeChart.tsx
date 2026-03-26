@@ -17,9 +17,6 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  type TooltipContentProps,
-  type ValueType,
-  type NameType,
 } from "recharts";
 import type { ComparisonReportOvertimeRow } from "@/types/report.types";
 
@@ -31,12 +28,23 @@ export interface ComparisonOvertimeChartProps {
   height?: number;
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    dataKey?: string | number;
+    name?: string;
+    value?: number | string;
+    color?: string;
+  }>;
+  label?: string | number;
+}
+
 function buildTooltip(formatAmount: (value: number) => string) {
   return function ComparisonTooltip({
     active,
     payload,
     label,
-  }: TooltipContentProps<ValueType, NameType>) {
+  }: CustomTooltipProps) {
     if (!active || !payload?.length) return null;
     return (
       <div className="rounded-md border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
