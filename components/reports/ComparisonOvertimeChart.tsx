@@ -18,6 +18,8 @@ import {
   XAxis,
   YAxis,
   type TooltipContentProps,
+  type NameType,
+  type ValueType,
 } from "recharts";
 import type { ComparisonReportOvertimeRow } from "@/types/report.types";
 
@@ -34,7 +36,7 @@ function buildTooltip(formatAmount: (value: number) => string) {
     active,
     payload,
     label,
-  }: TooltipContentProps<number, string>) {
+  }: TooltipContentProps<ValueType, NameType>) {
     if (!active || !payload?.length) return null;
     return (
       <div className="rounded-md border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
