@@ -13,6 +13,7 @@
 - [2. Product Overview](#2-product-overview)
 - [3. Technical Architecture](#3-technical-architecture)
 - [4. Functional Requirements](#4-functional-requirements)
+  - [4.7 Currency Conversion & Exchange Rates](#47-currency-conversion--exchange-rates)
 - [5. Non-Functional Requirements](#5-non-functional-requirements)
 - [6. MVP Scope](#6-mvp-scope)
 - [7. Future Enhancements](#7-future-enhancements)
@@ -61,6 +62,7 @@ PocketMate democratizes personal financial management by providing a powerful ye
 - Expense vs Income comparison reports
 - Financial statement generation
 - Transaction history with filtering
+- VND conversion display for USD and mace (gold) amounts with live daily exchange rates
 
 ---
 
@@ -177,6 +179,7 @@ Users shall be able to view a list of all their financial accounts.
 - System displays all accounts in a list or card view
 - Each account shows: name, type, currency, current balance
 - Current balance is calculated from opening balance + sum of all transactions
+- For accounts in USD or mace (gold), the card displays the VND equivalent as a secondary line below the original balance (e.g. `100 USD` / `≈ 2,500,000 ₫`)
 - User can filter accounts by type
 - User can search accounts by name
 
@@ -536,6 +539,83 @@ Users shall be able to view complete transaction history with filtering.
 
 ---
 
+### 4.7 Currency Conversion & Exchange Rates
+
+#### FR-FX-001: Fetch and Cache Daily Exchange Rates
+
+**Priority:** High
+
+The system shall fetch live exchange rates once per day and cache them for use across all views.
+
+**Rates required:**
+
+| Rate | Source | Notes |
+|------|--------|-------|
+| USD → VND | Public exchange rate API (e.g. ExchangeRate-API) | Standard mid-market rate |
+| Mace → VND | Live gold price API (e.g. GoldAPI.io) | 1 mace = 3.75 g gold; derive VND from XAU/USD × USD/VND × (3.75 ÷ 31.1035) |
+
+**Acceptance Criteria:**
+
+- On first page load of a session, if no cached rate exists for today, the system fetches fresh rates from the external APIs
+- Fetched rates are cached server-side (or in a Supabase table) with a `fetched_at` timestamp
+- Subsequent requests within the same calendar day reuse the cached rates without calling external APIs
+- If the external API call fails, the system falls back to the most recently cached rate and displays a subtle staleness indicator (e.g. "Rate from yesterday")
+- Exchange rate fetch errors do not block page rendering; amounts are shown in their original currency without conversion until rates are available
+
+#### FR-FX-002: VND Conversion Display on Dashboard Cards
+
+**Priority:** High
+
+Dashboard summary cards showing balances or totals in USD or mace shall display the VND equivalent as a secondary line.
+
+**Acceptance Criteria:**
+
+- Cards displaying USD amounts show the converted VND amount on a secondary line below (e.g. `$500.00` / `≈ 12,750,000 ₫`)
+- Cards displaying mace amounts show the converted VND amount on a secondary line (e.g. `2.5 mace` / `≈ 18,000,000 ₫`)
+- Cards already in VND show no secondary line
+- Converted amounts are prefixed with `≈` to indicate approximation
+- VND amounts are formatted with thousands separators and the `₫` symbol
+
+#### FR-FX-003: VND Conversion Display on Account Page
+
+**Priority:** High
+
+Each financial account card shall show the VND equivalent for non-VND account balances.
+
+**Acceptance Criteria:**
+
+- Account balance in USD or mace displays a secondary line with the VND equivalent (same format as FR-FX-002)
+- VND accounts are unaffected
+- The secondary line uses a muted/secondary text style to visually distinguish it from the primary balance
+
+#### FR-FX-004: VND Conversion in Reports
+
+**Priority:** High
+
+Report summary totals that span transactions in multiple currencies shall be presented per-currency with a combined VND equivalent.
+
+**Acceptance Criteria:**
+
+- When the selected date range contains transactions in more than one currency, the report summary section shows a breakdown line per currency (e.g. `Total Expense: 5,000,000 ₫ + $200 + 1 mace`)
+- Below the per-currency breakdown, a single "Combined total" line shows the VND equivalent of all amounts summed together (e.g. `≈ 15,100,000 ₫ total`)
+- If all transactions in the range are in VND, only the single VND total is shown (no "Combined total" line needed)
+- This applies to: Expense Report, Income Report, Expense vs Income Comparison Report, and Financial Statement
+
+#### FR-FX-005: Exchange Rate Widget on Dashboard
+
+**Priority:** Medium
+
+The Dashboard shall display a compact exchange rate widget at the bottom of the page showing today's rates.
+
+**Acceptance Criteria:**
+
+- Widget shows: `1 USD = X,XXX ₫` and `1 mace = X,XXX,XXX ₫`
+- Widget shows the date/time the rates were last fetched (e.g. "Updated: 27 Mar 2026, 08:00")
+- If rates are stale (fetched on a previous day), widget label changes to "Rate from [date]" in a warning/muted style
+- Widget is non-interactive (display only); no manual refresh button in MVP
+
+---
+
 ## 5. Non-Functional Requirements
 
 ### 5.1 Performance
@@ -606,6 +686,7 @@ Users shall be able to view complete transaction history with filtering.
 - Financial statement showing assets and liabilities
 - Transaction history with search and filtering
 - Responsive design (desktop and mobile)
+- VND conversion for USD and mace amounts (live daily rates, display on Dashboard, Account page, and Reports)
 
 ### 6.2 Out of Scope for MVP
 
@@ -673,6 +754,6 @@ Users shall be able to view complete transaction history with filtering.
 
 ## Document Information
 
-**Last Updated:** February 2026  
-**Document Owner:** Development Team  
+**Last Updated:** March 2026
+**Document Owner:** Development Team
 **Status:** Draft - Ready for Implementation
