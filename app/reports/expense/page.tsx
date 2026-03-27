@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   endOfMonth,
@@ -97,6 +97,7 @@ export default function ExpenseReportPage() {
       return json;
     },
     enabled: Boolean(startDate && endDate),
+    placeholderData: keepPreviousData,
   });
 
   const categoriesQuery = useQuery<ExpenseCategoriesResponse>({
@@ -250,8 +251,12 @@ export default function ExpenseReportPage() {
         </p>
       ) : null}
 
-      {reportQuery.isLoading || reportQuery.isFetching ? (
+      {reportQuery.isLoading && !report ? (
         <p className="text-sm text-muted-foreground">Loading report…</p>
+      ) : null}
+
+      {reportQuery.isFetching && report ? (
+        <p className="text-sm text-muted-foreground">Refreshing report…</p>
       ) : null}
 
       {report ? (

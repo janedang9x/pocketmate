@@ -16,7 +16,7 @@ import {
   LineChart,
 } from "lucide-react";
 import { AccountCard } from "@/components/accounts/AccountCard";
-import { CategoryBreakdown, OvertimeChart } from "@/components/reports";
+import { CategoryBreakdown } from "@/components/reports";
 import { formatCurrency, getTopAccountsByBalance, aggregateBalancesByCurrency } from "@/lib/utils/account.utils";
 import type { AccountWithBalance, Currency } from "@/types/account.types";
 import type { ComparisonReportData, ExpenseReportData } from "@/types/report.types";
@@ -134,13 +134,6 @@ export default function DashboardPage() {
   const monthlyIncome = data?.monthlyComparison?.summary.totalIncome ?? 0;
   const monthlyExpense = data?.monthlyComparison?.summary.totalExpense ?? 0;
   const monthlyNetSavings = data?.monthlyComparison?.summary.netSavings ?? 0;
-
-  const expenseTrendData =
-    data?.monthlyExpense?.overtime.map((o) => ({
-      period: o.period,
-      amount: o.amount,
-      count: o.transactionCount,
-    })) ?? [];
 
   const topCategoryItems =
     data?.monthlyExpense?.byCategory.slice(0, 5).map((category) => ({
@@ -300,6 +293,14 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      <CategoryBreakdown
+        title="Top expense categories"
+        description="Highest spending categories this month"
+        items={topCategoryItems}
+        formatAmount={(value) => formatCurrency(value, primaryCurrency)}
+        listMaxHeight="220px"
+      />
+
       {/* Account Summary Cards */}
       {!isLoading && !error && accounts.length > 0 && (
         <Card className="shadow-sm">
@@ -323,26 +324,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Mini Charts */}
-      <div className="grid gap-6 xl:grid-cols-2">
-        <OvertimeChart
-          title="Expense trend (this month)"
-          description="Daily expense totals"
-          data={expenseTrendData}
-          variant="line"
-          height={220}
-          formatYAxis={(v) => formatCurrency(v, primaryCurrency)}
-          formatTooltip={(v) => formatCurrency(v, primaryCurrency)}
-        />
-        <CategoryBreakdown
-          title="Top expense categories"
-          description="Highest spending categories this month"
-          items={topCategoryItems}
-          formatAmount={(value) => formatCurrency(value, primaryCurrency)}
-          listMaxHeight="220px"
-        />
-      </div>
 
       {/* Reports quick links */}
       <Card className="shadow-sm">

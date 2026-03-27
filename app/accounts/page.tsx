@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ export default function AccountsPage() {
     queryParams.set("search", searchQuery.trim());
   }
 
-  const { data, isLoading, error } = useQuery<AccountsResponse>({
+  const { data, isLoading, isFetching, error } = useQuery<AccountsResponse>({
     queryKey: ["accounts", typeFilter, searchQuery],
     queryFn: async () => {
       const token = localStorage.getItem("pm_token");
@@ -66,6 +66,7 @@ export default function AccountsPage() {
 
       return (await res.json()) as AccountsResponse;
     },
+    placeholderData: keepPreviousData,
   });
 
   const accounts = data?.success === true ? data.data.accounts : [];
@@ -118,12 +119,16 @@ export default function AccountsPage() {
       </div>
 
       {/* Loading State */}
-      {isLoading && (
+      {isLoading && !data && (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="mb-2 text-muted-foreground">Loading accounts...</div>
           </div>
         </div>
+      )}
+
+      {isFetching && data && (
+        <p className="text-sm text-muted-foreground">Refreshing accounts...</p>
       )}
 
       {/* Error State */}
@@ -136,7 +141,7 @@ export default function AccountsPage() {
       )}
 
       {/* Accounts Grid */}
-      {!isLoading && !error && (
+      {!error && (
         <>
           {accounts.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12">

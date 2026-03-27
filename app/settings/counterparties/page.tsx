@@ -52,7 +52,7 @@ export default function CounterpartiesPage() {
   const [deletingCounterparty, setDeletingCounterparty] =
     useState<CounterpartyWithTransactionCount | null>(null);
 
-  const { data, isLoading } = useQuery<CounterpartiesResponse>({
+  const { data, isLoading, isFetching } = useQuery<CounterpartiesResponse>({
     queryKey: ["counterparties"],
     queryFn: async () => {
       const token = localStorage.getItem("pm_token");
@@ -194,7 +194,7 @@ export default function CounterpartiesPage() {
         </Dialog>
       </div>
 
-      {isLoading ? (
+      {isLoading && !data ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-muted-foreground">Loading counterparties...</div>
         </div>
@@ -253,6 +253,10 @@ export default function CounterpartiesPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {isFetching && data && (
+        <p className="text-sm text-muted-foreground">Refreshing counterparties...</p>
       )}
 
       <AlertDialog

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export default function FinancialStatementPage() {
       }
       return json;
     },
+    placeholderData: keepPreviousData,
   });
 
   const statement = statementQuery.data?.success === true ? statementQuery.data.data : null;
@@ -86,8 +87,12 @@ export default function FinancialStatementPage() {
         <p className="text-sm text-destructive">{(statementQuery.error as Error).message}</p>
       ) : null}
 
-      {statementQuery.isLoading || statementQuery.isFetching ? (
+      {statementQuery.isLoading && !statement ? (
         <p className="text-sm text-muted-foreground">Loading statement...</p>
+      ) : null}
+
+      {statementQuery.isFetching && statement ? (
+        <p className="text-sm text-muted-foreground">Refreshing statement...</p>
       ) : null}
 
       {statement ? (

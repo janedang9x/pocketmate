@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Plus, Search, Filter, Calendar, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -183,6 +183,7 @@ function TransactionsPageInner() {
   const {
     data: transactionsData,
     isLoading: isLoadingTransactions,
+    isFetching: isFetchingTransactions,
     error: transactionsError,
   } = useQuery<TransactionsResponse>({
     queryKey: [
@@ -213,6 +214,7 @@ function TransactionsPageInner() {
 
       return json;
     },
+    placeholderData: keepPreviousData,
   });
 
   const {
@@ -355,6 +357,7 @@ function TransactionsPageInner() {
     isLoadingExpenseCategories ||
     isLoadingIncomeCategories ||
     isLoadingCounterparties;
+  const isRefreshing = isFetchingTransactions && !isLoadingTransactions;
 
   const combinedError =
     transactionsError ||
@@ -560,10 +563,14 @@ function TransactionsPageInner() {
         </div>
       </div>
 
-      {isLoading && (
+      {isLoading && !transactionsData && (
         <div className="flex items-center justify-center py-12">
           <p className="text-muted-foreground">Loading transactions...</p>
         </div>
+      )}
+
+      {isRefreshing && !combinedError && (
+        <p className="text-sm text-muted-foreground">Refreshing transactions...</p>
       )}
 
       {combinedError && (
@@ -574,7 +581,7 @@ function TransactionsPageInner() {
         </div>
       )}
 
-      {!isLoading && !combinedError && (
+      {!combinedError && (
         <>
           {sortedTransactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12">

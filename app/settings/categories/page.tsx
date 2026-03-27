@@ -80,7 +80,11 @@ export default function CategoriesPage() {
   );
 
   // Fetch expense categories
-  const { data: expenseData, isLoading: expenseLoading } = useQuery<ExpenseCategoriesResponse>({
+  const {
+    data: expenseData,
+    isLoading: expenseLoading,
+    isFetching: expenseFetching,
+  } = useQuery<ExpenseCategoriesResponse>({
     queryKey: ["expense-categories"],
     queryFn: async () => {
       const token = localStorage.getItem("pm_token");
@@ -100,7 +104,11 @@ export default function CategoriesPage() {
   });
 
   // Fetch income categories
-  const { data: incomeData, isLoading: incomeLoading } = useQuery<IncomeCategoriesResponse>({
+  const {
+    data: incomeData,
+    isLoading: incomeLoading,
+    isFetching: incomeFetching,
+  } = useQuery<IncomeCategoriesResponse>({
     queryKey: ["income-categories"],
     queryFn: async () => {
       const token = localStorage.getItem("pm_token");
@@ -330,7 +338,7 @@ export default function CategoriesPage() {
             </Dialog>
           </div>
 
-          {expenseLoading ? (
+          {expenseLoading && !expenseData ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-muted-foreground">Loading categories...</div>
             </div>
@@ -439,7 +447,7 @@ export default function CategoriesPage() {
             </Dialog>
           </div>
 
-          {incomeLoading ? (
+          {incomeLoading && !incomeData ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-muted-foreground">Loading categories...</div>
             </div>
@@ -484,6 +492,10 @@ export default function CategoriesPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {(expenseFetching || incomeFetching) && (expenseData || incomeData) && (
+        <p className="text-sm text-muted-foreground">Refreshing categories...</p>
+      )}
 
       {/* Delete Expense Category Dialog */}
       <AlertDialog
