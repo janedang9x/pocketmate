@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,11 +16,14 @@ import {
   type CreateTransactionInput,
 } from "@/lib/schemas/transaction.schema";
 import type { AccountWithBalance } from "@/types/account.types";
+import type { Currency } from "@/types/account.types";
 import type { Counterparty } from "@/types/counterparty.types";
 import type { ExpenseCategoryWithChildren, IncomeCategory } from "@/types/category.types";
 import type { TransactionType } from "@/types/transaction.types";
 import { CategorySelector } from "@/components/categories/CategorySelector";
 import { CounterpartySelector } from "@/components/counterparties/CounterpartySelector";
+import { getCurrencyLabel } from "@/lib/utils/account.utils";
+import { getLatestVndExchangeRates, type VndExchangeRates } from "@/lib/utils/exchange-rate.utils";
 
 interface TransactionFormProps {
   accounts: AccountWithBalance[];
@@ -60,6 +63,89 @@ function getInitialDateTimeLocal() {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+function normalizeAmountByCurrency(value: number, currency?: string): number {
+  if (!Number.isFinite(value)) return 0;
+  if (currency === "VND") return Math.round(value);
+  return value;
+}
+
+function parseAmountInput(raw: string, currency?: string): number {
+  const sanitized = raw.replace(/,/g, "").trim();
+  if (!sanitized) return 0;
+  const parsed = Number(sanitized);
+  if (!Number.isFinite(parsed)) return 0;
+  return normalizeAmountByCurrency(parsed, currency);
+}
+
+function formatAmountDisplay(value: number | undefined, currency?: string): string {
+  if (value == null || !Number.isFinite(value) || value === 0) return "";
+  const maxFractionDigits = currency === "VND" ? 0 : 2;
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxFractionDigits,
+  });
+}
+
+interface FormattedAmountInputProps {
+  id: string;
+  value: number | undefined;
+  onValueChange: (next: number) => void;
+  currency?: string;
+  onManualEdit?: () => void;
+}
+
+function FormattedAmountInput({
+  id,
+  value,
+  onValueChange,
+  currency,
+  onManualEdit,
+}: FormattedAmountInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [editingValue, setEditingValue] = useState("");
+
+  useEffect(() => {
+    if (isFocused) return;
+    setEditingValue(formatAmountDisplay(value, currency));
+  }, [isFocused, value, currency]);
+
+  const displayValue = isFocused
+    ? editingValue
+    : formatAmountDisplay(value, currency);
+
+  return (
+    <Input
+      id={id}
+      type="text"
+      inputMode="decimal"
+      placeholder={currency === "VND" ? "0" : "0.00"}
+      value={displayValue}
+      onFocus={() => {
+        setIsFocused(true);
+        const raw =
+          value == null || !Number.isFinite(value) || value === 0
+            ? ""
+            : String(value);
+        setEditingValue(raw);
+      }}
+      onBlur={() => {
+        const parsed = parseAmountInput(editingValue, currency);
+        onValueChange(parsed);
+        setEditingValue(formatAmountDisplay(parsed, currency));
+        setIsFocused(false);
+      }}
+      onChange={(event) => {
+        const raw = event.target.value;
+        const normalizedRaw = raw.replace(/[^0-9.,]/g, "");
+        setEditingValue(normalizedRaw);
+        const parsed = parseAmountInput(normalizedRaw, currency);
+        onValueChange(parsed);
+        onManualEdit?.();
+      }}
+    />
+  );
+}
+
 /**
  * TransactionForm
  * Implements Sprint 3.4 - Transaction UI Create Flows
@@ -87,9 +173,10 @@ export function TransactionForm({
       : (initialType as TransactionTab);
 
   const [activeTab, setActiveTab] = useState<TransactionTab>(initialTab);
-  const [borrowMode, setBorrowMode] = useState<"borrowing" | "lending">(() =>
-    initialTab === "Lend" ? "lending" : "borrowing",
-  );
+  const [cachedRates, setCachedRates] = useState<VndExchangeRates | null>(null);
+  const [hasManualTransferOverride, setHasManualTransferOverride] = useState(false);
+  const [autoFilledSide, setAutoFilledSide] = useState<"source" | "destination" | null>(null);
+  const autoFilledSideRef = useRef<"source" | "destination" | null>(null);
 
   const form = useForm<CreateTransactionInput>({
     resolver: zodResolver(createTransactionSchema),
@@ -125,12 +212,6 @@ export function TransactionForm({
     }
 
     setActiveTab(nextTab);
-
-    if (nextTab === "Borrow") {
-      setBorrowMode("borrowing");
-    } else if (nextTab === "Lend") {
-      setBorrowMode("lending");
-    }
 
     if (nextType === "Expense") {
       form.reset(
@@ -182,6 +263,20 @@ export function TransactionForm({
   }
 
   useEffect(() => {
+    let active = true;
+    getLatestVndExchangeRates()
+      .then((rates) => {
+        if (active) setCachedRates(rates);
+      })
+      .catch((error) => {
+        console.error("Failed to load cached exchange rates:", error);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const currentTypeValue = watchType as TransactionType;
 
     function syncCurrencyFromAccount(accountId: string | undefined) {
@@ -219,6 +314,65 @@ export function TransactionForm({
   const hasDifferentCurrencies =
     fromAccount && toAccount && fromAccount.currency !== toAccount.currency;
 
+  function getPairRate(
+    from: Currency,
+    to: Currency,
+    rates: VndExchangeRates | null,
+  ): number | null {
+    if (!rates) return null;
+    if (from === to) return 1;
+
+    const toVnd = (currency: Currency) => {
+      if (currency === "VND") return 1;
+      if (currency === "USD") return rates.usdToVnd;
+      return rates.maceToVnd;
+    };
+
+    const fromToVnd = toVnd(from);
+    const toToVnd = toVnd(to);
+    if (!fromToVnd || !toToVnd) return null;
+    return fromToVnd / toToVnd;
+  }
+
+  const cachedPairRate =
+    fromAccount && toAccount && hasDifferentCurrencies
+      ? getPairRate(fromAccount.currency as Currency, toAccount.currency as Currency, cachedRates)
+      : null;
+
+  function getPreferredExchangeDirection(
+    from: Currency,
+    to: Currency,
+  ): { base: Currency; quote: Currency } {
+    if (from === "mace" || to === "mace") {
+      return { base: "mace", quote: from === "mace" ? to : from };
+    }
+    if (from === "USD" || to === "USD") {
+      return { base: "USD", quote: from === "USD" ? to : from };
+    }
+    return { base: from, quote: to };
+  }
+
+  const effectiveFromToRate =
+    watchAmount && watchDestinationAmount && watchAmount > 0 && watchDestinationAmount > 0
+      ? watchDestinationAmount / watchAmount
+      : cachedPairRate;
+
+  const preferredDirection =
+    fromAccount && toAccount && hasDifferentCurrencies
+      ? getPreferredExchangeDirection(fromAccount.currency as Currency, toAccount.currency as Currency)
+      : null;
+
+  const preferredDirectionRate =
+    preferredDirection &&
+    fromAccount &&
+    toAccount &&
+    effectiveFromToRate &&
+    effectiveFromToRate > 0
+      ? preferredDirection.base === (fromAccount.currency as Currency)
+        ? effectiveFromToRate
+        : 1 / effectiveFromToRate
+      : null;
+
   const amountCurrencyLabel =
     (watchType as TransactionType) === "Expense"
       ? accounts.find((a) => a.id === watchFromAccountId)?.currency
@@ -252,6 +406,20 @@ export function TransactionForm({
     watchDestinationAmount,
     form,
   ]);
+
+  useEffect(() => {
+    autoFilledSideRef.current = autoFilledSide;
+  }, [autoFilledSide]);
+
+  useEffect(() => {
+    if (!isTransfer || !hasDifferentCurrencies) {
+      setHasManualTransferOverride(false);
+      setAutoFilledSide(null);
+      return;
+    }
+    setHasManualTransferOverride(false);
+    setAutoFilledSide(null);
+  }, [isTransfer, hasDifferentCurrencies, watchFromAccountId, watchToAccountId]);
 
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -295,12 +463,20 @@ export function TransactionForm({
               <Label htmlFor="amount">
                 Amount ({amountCurrencyLabel ?? "Currency"})
               </Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                {...form.register("amount", { valueAsNumber: true })}
+              <Controller
+                control={form.control}
+                name="amount"
+                render={({ field }) => {
+                  const normalizedValue = normalizeAmountByCurrency(Number(field.value ?? 0), amountCurrencyLabel);
+                  return (
+                    <FormattedAmountInput
+                      id="amount"
+                      value={Number.isFinite(normalizedValue) ? normalizedValue : 0}
+                      currency={amountCurrencyLabel}
+                      onValueChange={(next) => field.onChange(next)}
+                    />
+                  );
+                }}
               />
               {form.formState.errors.amount?.message ? (
                 <p className="text-sm text-destructive">
@@ -312,20 +488,6 @@ export function TransactionForm({
             <div />
           )}
 
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="details">Notes / Details</Label>
-            <textarea
-              id="details"
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              placeholder="Optional note about this transaction"
-              {...form.register("details")}
-            />
-            {form.formState.errors.details?.message ? (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.details.message}
-              </p>
-            ) : null}
-          </div>
         </div>
 
         <TabsContent value="Expense" className="mt-4 space-y-4">
@@ -484,7 +646,7 @@ export function TransactionForm({
                     <option value="">Select account</option>
                     {accounts.map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.name} ({account.currency})
+                        {account.name} ({getCurrencyLabel(account.currency as Currency)})
                       </option>
                     ))}
                   </select>
@@ -516,7 +678,7 @@ export function TransactionForm({
                     <option value="">Select account</option>
                     {accounts.map((account) => (
                       <option key={account.id} value={account.id}>
-                        {account.name} ({account.currency})
+                        {account.name} ({getCurrencyLabel(account.currency as Currency)})
                       </option>
                     ))}
                   </select>
@@ -537,14 +699,43 @@ export function TransactionForm({
               <>
                 <div className="space-y-2">
                   <Label htmlFor="amount">
-                    Amount ({fromAccount?.currency ?? "source currency"})
+                    Amount ({fromAccount ? getCurrencyLabel(fromAccount.currency as Currency) : "source currency"})
                   </Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...form.register("amount", { valueAsNumber: true })}
+                  <Controller
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormattedAmountInput
+                        id="amount"
+                        value={normalizeAmountByCurrency(Number(field.value ?? 0), fromAccount?.currency as string) ?? 0}
+                        currency={fromAccount?.currency as string}
+                        onValueChange={(next) => {
+                          field.onChange(next);
+
+                          if (
+                            !hasManualTransferOverride &&
+                            autoFilledSide !== "source" &&
+                            cachedPairRate &&
+                            cachedPairRate > 0 &&
+                            hasDifferentCurrencies
+                          ) {
+                            const autoDestination = normalizeAmountByCurrency(
+                              next * cachedPairRate,
+                              toAccount?.currency as string,
+                            );
+                            form.setValue("destinationAmount" as any, autoDestination, {
+                              shouldDirty: true,
+                            });
+                            setAutoFilledSide("destination");
+                          }
+                        }}
+                        onManualEdit={() => {
+                          if (autoFilledSideRef.current === "source") {
+                            setHasManualTransferOverride(true);
+                          }
+                        }}
+                      />
+                    )}
                   />
                   {form.formState.errors.amount?.message ? (
                     <p className="text-sm text-destructive">
@@ -555,34 +746,59 @@ export function TransactionForm({
 
                 <div className="space-y-2">
                   <Label htmlFor="destinationAmount">
-                    Amount ({toAccount?.currency ?? "destination currency"})
+                    Amount ({toAccount ? getCurrencyLabel(toAccount.currency as Currency) : "destination currency"})
                   </Label>
-                  <Input
-                    id="destinationAmount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...form.register("destinationAmount" as any, { valueAsNumber: true })}
+                  <Controller
+                    control={form.control}
+                    name={"destinationAmount" as any}
+                    render={({ field }) => (
+                      <FormattedAmountInput
+                        id="destinationAmount"
+                        value={normalizeAmountByCurrency(Number(field.value ?? 0), toAccount?.currency as string) ?? 0}
+                        currency={toAccount?.currency as string}
+                        onValueChange={(next) => {
+                          field.onChange(next);
+
+                          if (
+                            !hasManualTransferOverride &&
+                            autoFilledSide !== "destination" &&
+                            cachedPairRate &&
+                            cachedPairRate > 0 &&
+                            hasDifferentCurrencies
+                          ) {
+                            const autoSource = normalizeAmountByCurrency(
+                              next / cachedPairRate,
+                              fromAccount?.currency as string,
+                            );
+                            form.setValue("amount", autoSource, {
+                              shouldDirty: true,
+                            });
+                            setAutoFilledSide("source");
+                          }
+                        }}
+                        onManualEdit={() => {
+                          if (autoFilledSideRef.current === "destination") {
+                            setHasManualTransferOverride(true);
+                          }
+                        }}
+                      />
+                    )}
                   />
                 </div>
 
                 <div className="space-y-1 md:col-span-2">
-                  {watchAmount &&
-                  watchDestinationAmount &&
-                  watchAmount > 0 &&
-                  watchDestinationAmount > 0 ? (
+                  {preferredDirection && preferredDirectionRate && preferredDirectionRate > 0 ? (
                     <p className="text-xs text-muted-foreground">
                       Exchange rate:{" "}
                       <span className="font-medium">
-                        {(
-                          watchDestinationAmount / watchAmount
-                        ).toFixed(4)}{" "}
-                        {toAccount?.currency ?? ""} per 1 {fromAccount?.currency ?? ""}
+                        1 {getCurrencyLabel(preferredDirection.base)} ={" "}
+                        {preferredDirectionRate.toFixed(4)}{" "}
+                        {getCurrencyLabel(preferredDirection.quote)}
                       </span>
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Enter both amounts to see the exchange rate.
+                      Enter an amount to see the exchange rate.
                     </p>
                   )}
                 </div>
@@ -624,34 +840,11 @@ export function TransactionForm({
                   </select>
                 )}
               />
-              {(form.formState.errors as { fromAccountId?: { message?: string }; toAccountId?: { message?: string } })[
-                "toAccountId"
-              ]?.message ? (
+              {(form.formState.errors as { toAccountId?: { message?: string } })["toAccountId"]?.message ? (
                 <p className="text-sm text-destructive">
                   {
-                    (form.formState.errors as {
-                      fromAccountId?: { message?: string };
-                      toAccountId?: { message?: string };
-                    })[borrowMode === "borrowing" ? "toAccountId" : "fromAccountId"]?.message
+                    (form.formState.errors as { toAccountId?: { message?: string } })["toAccountId"]?.message
                   }
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amount-borrow">
-                Amount ({accounts.find((a) => a.id === watchToAccountId)?.currency ?? "Currency"})
-              </Label>
-              <Input
-                id="amount-borrow"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                {...form.register("amount", { valueAsNumber: true })}
-              />
-              {form.formState.errors.amount?.message ? (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.amount.message}
                 </p>
               ) : null}
             </div>
@@ -703,34 +896,11 @@ export function TransactionForm({
                   </select>
                 )}
               />
-              {(form.formState.errors as { fromAccountId?: { message?: string }; toAccountId?: { message?: string } })[
-                "fromAccountId"
-              ]?.message ? (
+              {(form.formState.errors as { fromAccountId?: { message?: string } })["fromAccountId"]?.message ? (
                 <p className="text-sm text-destructive">
                   {
-                    (form.formState.errors as {
-                      fromAccountId?: { message?: string };
-                      toAccountId?: { message?: string };
-                    })[borrowMode === "borrowing" ? "toAccountId" : "fromAccountId"]?.message
+                    (form.formState.errors as { fromAccountId?: { message?: string } })["fromAccountId"]?.message
                   }
-                </p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amount-lend">
-                Amount ({accounts.find((a) => a.id === watchFromAccountId)?.currency ?? "Currency"})
-              </Label>
-              <Input
-                id="amount-lend"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                {...form.register("amount", { valueAsNumber: true })}
-              />
-              {form.formState.errors.amount?.message ? (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.amount.message}
                 </p>
               ) : null}
             </div>
@@ -757,6 +927,21 @@ export function TransactionForm({
           </div>
         </TabsContent>
       </Tabs>
+
+      <div className="space-y-2">
+        <Label htmlFor="details">Notes / Details</Label>
+        <textarea
+          id="details"
+          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          placeholder="Optional note about this transaction"
+          {...form.register("details")}
+        />
+        {form.formState.errors.details?.message ? (
+          <p className="text-sm text-destructive">
+            {form.formState.errors.details.message}
+          </p>
+        ) : null}
+      </div>
 
       <div className="pt-2">
         <Button type="submit" className="w-full" disabled={isSubmitting}>

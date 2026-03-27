@@ -7,10 +7,12 @@ import {
   calculateAccountBalances,
   addBalancesToAccounts,
 } from "@/lib/utils/account.utils";
+import { getLatestVndExchangeRates } from "@/lib/utils/exchange-rate.utils";
 import type { AccountWithBalance } from "@/types/account.types";
 import type { Database } from "@/types/database.types";
 
 type FinancialAccount = Database["public"]["Tables"]["financial_account"]["Row"];
+type TransactionInsert = Database["public"]["Tables"]["transaction"]["Insert"];
 
 /**
  * List all financial accounts for the authenticated user
@@ -59,7 +61,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (!accounts || accounts.length === 0) {
-      return jsonSuccess({ accounts: [] });
+      const exchangeRates = await getLatestVndExchangeRates().catch(() => null);
+      return jsonSuccess({ accounts: [], exchangeRates });
     }
 
     // Type cast accounts to FinancialAccount[]
@@ -70,8 +73,9 @@ export async function GET(req: NextRequest) {
 
     // Add balances to accounts
     const accountsWithBalance = addBalancesToAccounts(typedAccounts, balances) as AccountWithBalance[];
+    const exchangeRates = await getLatestVndExchangeRates().catch(() => null);
 
-    return jsonSuccess({ accounts: accountsWithBalance });
+    return jsonSuccess({ accounts: accountsWithBalance, exchangeRates });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return jsonError(401, "Authentication required", "UNAUTHORIZED");
@@ -141,7 +145,7 @@ export async function POST(req: NextRequest) {
     // This represents the opening balance as the first transaction
     if (validatedData.openingBalance !== 0) {
       const transactionType = validatedData.openingBalance > 0 ? "Income" : "Expense";
-      const transactionData: any = {
+      const transactionData: TransactionInsert = {
         user_id: user.id,
         type: transactionType,
         amount: Math.abs(validatedData.openingBalance),

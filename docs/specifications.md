@@ -263,8 +263,11 @@ Users shall be able to transfer money between their accounts.
 - User selects source account (from)
 - User selects destination account (to)
 - User enters amount in source account currency
-- If accounts have different currencies, user enters both source amount and destination amount
-- System automatically calculates and displays the exchange rate based on the two amounts
+- If accounts have different currencies and user enters one amount, system auto-fills the other amount using cached exchange rates
+- For USD↔mace conversion, system derives the rate from cached USD/VND and mace/VND values
+- If user edits the auto-filled amount, system keeps both user-entered values and recalculates only the displayed exchange-rate note
+- System does not overwrite cached exchange rates based on user-edited transfer values
+- Exchange-rate note is shown in format: `1 <FROM_CURRENCY> = X <TO_CURRENCY>`
 - User enters date and time
 - User can add notes/description
 - System deducts from source account

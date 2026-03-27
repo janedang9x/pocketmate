@@ -32,6 +32,7 @@ import {
   type TrendDirection,
 } from "@/lib/utils/report.utils";
 import type { ComparisonReportData } from "@/types/report.types";
+import { formatCurrency } from "@/lib/utils/account.utils";
 
 type ComparisonReportResponse =
   | { success: true; data: ComparisonReportData }
@@ -46,10 +47,7 @@ function defaultRange(): { start: string; end: string } {
 }
 
 function formatAmount(value: number): string {
-  return value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return formatCurrency(value, "VND");
 }
 
 function trendLabel(direction: TrendDirection, subject: string): string {
@@ -110,6 +108,12 @@ export default function ComparisonReportPage() {
       ? (report.summary.totalExpense / report.summary.totalIncome) * 100
       : 0;
   const savingsRatePct = report?.summary.savingsRate ?? 0;
+  const incomeMultiCurrencyText = report
+    ? `Multi-currency: ${formatCurrency(report.summary.originalTotalsByCurrency.income.VND, "VND")}, ${formatCurrency(report.summary.originalTotalsByCurrency.income.USD, "USD")}, ${formatCurrency(report.summary.originalTotalsByCurrency.income.mace, "mace")}`
+    : "";
+  const expenseMultiCurrencyText = report
+    ? `Multi-currency: ${formatCurrency(report.summary.originalTotalsByCurrency.expense.VND, "VND")}, ${formatCurrency(report.summary.originalTotalsByCurrency.expense.USD, "USD")}, ${formatCurrency(report.summary.originalTotalsByCurrency.expense.mace, "mace")}`
+    : "";
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -189,7 +193,7 @@ export default function ComparisonReportPage() {
               title="Total income"
               value={formatAmount(report.summary.totalIncome)}
               valueClassName="text-emerald-600"
-              description="Incoming amount in selected range"
+              description={incomeMultiCurrencyText}
               trend={{
                 label: trendLabel(incomeTrend.direction, "Income"),
                 direction: incomeTrend.direction,
@@ -199,7 +203,7 @@ export default function ComparisonReportPage() {
               title="Total expense"
               value={formatAmount(report.summary.totalExpense)}
               valueClassName="text-red-600"
-              description="Outgoing amount in selected range"
+              description={expenseMultiCurrencyText}
               trend={{
                 label: trendLabel(expenseTrend.direction, "Expense"),
                 direction: expenseTrend.direction,
@@ -209,7 +213,7 @@ export default function ComparisonReportPage() {
               title="Net savings"
               value={formatAmount(report.summary.netSavings)}
               valueClassName="text-blue-600"
-              description="Income minus expense"
+              description="Income minus expense (VND)"
               trend={{
                 label: trendLabel(netTrend.direction, "Net"),
                 direction: netTrend.direction,

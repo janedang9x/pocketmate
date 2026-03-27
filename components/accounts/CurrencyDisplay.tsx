@@ -1,4 +1,5 @@
 import type { Currency } from "@/types/account.types";
+import { getCurrencyLabel } from "@/lib/utils/account.utils";
 
 interface CurrencyDisplayProps {
   amount: number;
@@ -18,7 +19,7 @@ export function CurrencyDisplay({ amount, currency, className }: CurrencyDisplay
       maximumFractionDigits: curr === "VND" ? 0 : 2,
     }).format(value);
 
-    return `${formatted} ${curr}`;
+    return `${formatted} ${getCurrencyLabel(curr)}`;
   };
 
   return <span className={className}>{formatAmount(amount, currency)}</span>;

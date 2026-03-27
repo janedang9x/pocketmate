@@ -110,7 +110,14 @@ export function formatCurrency(amount: number, currency: Currency): string {
     maximumFractionDigits: currency === "VND" ? 0 : 2,
   }).format(amount);
 
-  return `${formatted} ${currency}`;
+  return `${formatted} ${getCurrencyLabel(currency)}`;
+}
+
+/**
+ * UI display label for currency code
+ */
+export function getCurrencyLabel(currency: Currency): string {
+  return currency;
 }
 
 /**

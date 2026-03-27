@@ -8,6 +8,8 @@ import {
   percentageOf,
   type ReportGroupBy,
 } from "@/lib/utils/report.utils";
+import { convertAmountToVnd, getLatestVndExchangeRates } from "@/lib/utils/exchange-rate.utils";
+import type { Currency } from "@/types/account.types";
 import type { Database } from "@/types/database.types";
 import type {
   ExpenseReportCategoryRow,
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
           .or(`user_id.is.null,user_id.eq.${user.id}`),
         supabase
           .from("transaction")
-          .select("id, amount, date_time, expense_category_id")
+          .select("id, amount, currency, date_time, expense_category_id")
           .eq("user_id", user.id)
           .eq("type", "Expense")
           .gte("date_time", parsed.startDate)
@@ -85,12 +87,25 @@ export async function GET(req: NextRequest) {
 
     const transactions = (txRows ?? []) as Pick<
       TransactionRow,
-      "id" | "amount" | "date_time" | "expense_category_id"
+      "id" | "amount" | "currency" | "date_time" | "expense_category_id"
     >[];
+    const exchangeRates = await getLatestVndExchangeRates().catch(() => null);
+
+    const toVnd = (amount: number, currency: string): number => {
+      if (!exchangeRates) return amount;
+      return convertAmountToVnd(amount, currency as Currency, exchangeRates);
+    };
 
     const filtered = transactions.filter((t) => matchesCategoryFilter(t.expense_category_id));
+    const originalTotalsByCurrency = { VND: 0, USD: 0, mace: 0 };
+    for (const t of filtered) {
+      const currency = t.currency as keyof typeof originalTotalsByCurrency;
+      if (currency in originalTotalsByCurrency) {
+        originalTotalsByCurrency[currency] += t.amount;
+      }
+    }
 
-    const totalExpense = filtered.reduce((s, t) => s + t.amount, 0);
+    const totalExpense = filtered.reduce((s, t) => s + toVnd(t.amount, t.currency), 0);
     const transactionCount = filtered.length;
     const averageExpense = transactionCount > 0 ? totalExpense / transactionCount : 0;
 
@@ -102,7 +117,7 @@ export async function GET(req: NextRequest) {
       const cid = t.expense_category_id;
       const key = cid ?? UNCATEGORIZED_ID;
       const prev = directBuckets.get(key) ?? { amount: 0, count: 0 };
-      prev.amount += t.amount;
+      prev.amount += toVnd(t.amount, t.currency);
       prev.count += 1;
       directBuckets.set(key, prev);
     }
@@ -113,7 +128,7 @@ export async function GET(req: NextRequest) {
       const pid = rollupParentId(t.expense_category_id);
       const key = pid ?? UNCATEGORIZED_ID;
       const prev = parentBuckets.get(key) ?? { amount: 0, count: 0 };
-      prev.amount += t.amount;
+      prev.amount += toVnd(t.amount, t.currency);
       prev.count += 1;
       parentBuckets.set(key, prev);
     }
@@ -178,7 +193,7 @@ export async function GET(req: NextRequest) {
     const overtime = aggregateByPeriod(
       filtered,
       (t) => t.date_time,
-      (t) => t.amount,
+      (t) => toVnd(t.amount, t.currency),
       parsed.groupBy as ReportGroupBy,
     ).map(
       (row): ExpenseReportOvertimeRow => ({
@@ -193,6 +208,7 @@ export async function GET(req: NextRequest) {
         totalExpense,
         transactionCount,
         averageExpense,
+        originalTotalsByCurrency,
       },
       byCategory,
       overtime,

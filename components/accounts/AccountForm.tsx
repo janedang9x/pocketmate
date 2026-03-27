@@ -19,6 +19,7 @@ import {
   type UpdateAccountInput,
 } from "@/lib/schemas/account.schema";
 import { ACCOUNT_TYPES, CURRENCIES } from "@/types/account.types";
+import { getCurrencyLabel } from "@/lib/utils/account.utils";
 
 type AccountFormValues = CreateAccountInput | UpdateAccountInput;
 
@@ -124,7 +125,7 @@ export function AccountForm({
                   <SelectContent>
                     {CURRENCIES.map((currency) => (
                       <SelectItem key={currency} value={currency}>
-                        {currency}
+                        {getCurrencyLabel(currency)}
                       </SelectItem>
                     ))}
                   </SelectContent>

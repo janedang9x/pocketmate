@@ -5,6 +5,8 @@ import {
   addBalancesToAccounts,
   calculateAccountBalances,
 } from "@/lib/utils/account.utils";
+import { convertAmountToVnd, getLatestVndExchangeRates } from "@/lib/utils/exchange-rate.utils";
+import type { Currency } from "@/types/account.types";
 import type { Database } from "@/types/database.types";
 import type {
   FinancialStatementAccountRow,
@@ -42,6 +44,13 @@ export async function GET(req: NextRequest) {
     const typedAccounts = (accounts ?? []) as FinancialAccountRow[];
     const balanceMap = await calculateAccountBalances(typedAccounts, user.id, accessToken);
     const accountsWithBalance = addBalancesToAccounts(typedAccounts, balanceMap);
+    const exchangeRates = await getLatestVndExchangeRates().catch(() => null);
+    const originalTotalsByCurrency = { VND: 0, USD: 0, mace: 0 };
+
+    const toVnd = (amount: number, currency: string): number => {
+      if (!exchangeRates) return amount;
+      return convertAmountToVnd(amount, currency as Currency, exchangeRates);
+    };
 
     const accountRows: FinancialStatementAccountRow[] = accountsWithBalance.map((account) => ({
       id: account.id,
@@ -50,12 +59,17 @@ export async function GET(req: NextRequest) {
       balance: account.balance,
       currency: account.currency,
     }));
-
-    const totalAssets = accountRows.reduce((sum, row) => sum + row.balance, 0);
+    const totalAssets = accountsWithBalance.reduce((sum, account) => {
+      const currency = account.currency as keyof typeof originalTotalsByCurrency;
+      if (currency in originalTotalsByCurrency) {
+        originalTotalsByCurrency[currency] += account.balance;
+      }
+      return sum + toVnd(account.balance, account.currency);
+    }, 0);
 
     const { data: borrowTransactions, error: borrowError } = await supabase
       .from("transaction")
-      .select("counterparty_id, from_account_id, to_account_id, amount")
+      .select("counterparty_id, from_account_id, to_account_id, amount, currency")
       .eq("user_id", user.id)
       .eq("type", "Borrow")
       .not("counterparty_id", "is", null);
@@ -73,18 +87,19 @@ export async function GET(req: NextRequest) {
 
     for (const tx of (borrowTransactions ?? []) as Pick<
       TransactionRow,
-      "counterparty_id" | "from_account_id" | "to_account_id" | "amount"
+      "counterparty_id" | "from_account_id" | "to_account_id" | "amount" | "currency"
     >[]) {
       if (!tx.counterparty_id) continue;
+      const amountVnd = toVnd(tx.amount, tx.currency);
 
       if (tx.to_account_id) {
         const prev = borrowedBuckets.get(tx.counterparty_id) ?? 0;
-        borrowedBuckets.set(tx.counterparty_id, prev + tx.amount);
+        borrowedBuckets.set(tx.counterparty_id, prev + amountVnd);
       }
 
       if (tx.from_account_id) {
         const prev = lentBuckets.get(tx.counterparty_id) ?? 0;
-        lentBuckets.set(tx.counterparty_id, prev + tx.amount);
+        lentBuckets.set(tx.counterparty_id, prev + amountVnd);
       }
     }
 
@@ -111,6 +126,13 @@ export async function GET(req: NextRequest) {
       assets: {
         accounts: accountRows.sort((a, b) => b.balance - a.balance),
         totalAssets,
+        exchangeRates: exchangeRates
+          ? {
+              usdToVnd: exchangeRates.usdToVnd,
+              maceToVnd: exchangeRates.maceToVnd,
+            }
+          : null,
+        originalTotalsByCurrency,
       },
       liabilities: {
         borrowedFrom,

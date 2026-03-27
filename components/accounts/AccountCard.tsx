@@ -2,22 +2,32 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { AccountTypeIcon } from "./AccountTypeIcon";
 import type { AccountWithBalance, Currency } from "@/types/account.types";
+import { getCurrencyLabel } from "@/lib/utils/account.utils";
+import { convertAmountToVnd, type VndExchangeRates } from "@/lib/utils/exchange-rate.utils";
 
 interface AccountCardProps {
   account: AccountWithBalance;
+  exchangeRates?: VndExchangeRates | null;
 }
 
 /**
  * Card component for displaying account information
  * Implements FR-ACC-002: View Financial Accounts
  */
-export function AccountCard({ account }: AccountCardProps) {
+export function AccountCard({ account, exchangeRates = null }: AccountCardProps) {
   const formatAmount = (value: number, curr: Currency): string => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: curr === "VND" ? 0 : 2,
       maximumFractionDigits: curr === "VND" ? 0 : 2,
     }).format(value);
   };
+  const currency = account.currency as Currency;
+  const shouldShowConvertedMain =
+    exchangeRates !== null && (currency === "USD" || currency === "mace");
+  const mainAmount = shouldShowConvertedMain
+    ? convertAmountToVnd(account.balance, currency, exchangeRates)
+    : account.balance;
+  const mainCurrency: Currency = shouldShowConvertedMain ? "VND" : currency;
 
   return (
     <Link href={`/accounts/${account.id}`}>
@@ -37,14 +47,19 @@ export function AccountCard({ account }: AccountCardProps) {
               <p className="text-sm text-muted-foreground mt-1">{account.type}</p>
               
               {/* Balance and Currency */}
-              <div className="mt-4 flex items-baseline justify-between gap-2">
+              <div className="mt-4 flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="text-2xl font-bold text-foreground">
-                    {formatAmount(account.balance, account.currency as Currency)}
+                    {formatAmount(mainAmount, mainCurrency)}
                   </div>
+                  {shouldShowConvertedMain && (
+                    <div className="mt-1 text-sm font-medium text-muted-foreground">
+                      {formatAmount(account.balance, currency)} {getCurrencyLabel(currency)}
+                    </div>
+                  )}
                 </div>
                 <div className="text-sm font-medium text-foreground/70">
-                  {account.currency}
+                  {getCurrencyLabel(mainCurrency)}
                 </div>
               </div>
             </div>

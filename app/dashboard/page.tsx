@@ -17,10 +17,15 @@ import {
 } from "lucide-react";
 import { AccountCard } from "@/components/accounts/AccountCard";
 import { CategoryBreakdown } from "@/components/reports";
-import { formatCurrency, getTopAccountsByBalance, aggregateBalancesByCurrency } from "@/lib/utils/account.utils";
+import {
+  formatCurrency,
+  getTopAccountsByBalance,
+  aggregateBalancesByCurrency,
+} from "@/lib/utils/account.utils";
 import type { AccountWithBalance, Currency } from "@/types/account.types";
 import type { ComparisonReportData, ExpenseReportData } from "@/types/report.types";
 import type { TransactionRow } from "@/types/transaction.types";
+import { convertAmountToVnd, type VndExchangeRates } from "@/lib/utils/exchange-rate.utils";
 
 type ApiError = { success: false; error: string; code: string };
 
@@ -29,6 +34,7 @@ type AccountsResponse =
       success: true;
       data: {
         accounts: AccountWithBalance[];
+        exchangeRates: VndExchangeRates | null;
       };
     }
   | ApiError;
@@ -46,6 +52,7 @@ type TransactionsResponse =
 
 interface DashboardData {
   accounts: AccountWithBalance[];
+  exchangeRates: VndExchangeRates | null;
   monthlyComparison: ComparisonReportData | null;
   monthlyExpense: ExpenseReportData | null;
   recentTransactions: TransactionRow[];
@@ -104,6 +111,7 @@ export default function DashboardPage() {
 
       return {
         accounts: accountsJson.data.accounts,
+        exchangeRates: accountsJson.data.exchangeRates,
         monthlyComparison:
           comparisonRes.ok && comparisonJson.success === true ? comparisonJson.data : null,
         monthlyExpense: expenseRes.ok && expenseJson.success === true ? expenseJson.data : null,
@@ -118,19 +126,17 @@ export default function DashboardPage() {
   });
 
   const accounts = data?.accounts ?? [];
+  const exchangeRates = data?.exchangeRates ?? null;
   const balancesByCurrency = aggregateBalancesByCurrency(accounts);
   const topAccounts = getTopAccountsByBalance(accounts, 4);
 
-  // Get primary currency (currency with highest total balance)
-  const primaryCurrency: Currency = balancesByCurrency.size > 0
-    ? Array.from(balancesByCurrency.entries())
-        .sort((a, b) => b[1] - a[1])[0][0]
-    : accounts.length > 0
-    ? (accounts[0].currency as Currency)
-    : "VND";
-
-  // Calculate total balance for primary currency only (for display)
-  const primaryCurrencyBalance = balancesByCurrency.get(primaryCurrency) ?? 0;
+  const totalBalanceVnd = exchangeRates
+    ? accounts.reduce(
+        (sum, account) =>
+          sum + convertAmountToVnd(account.balance, account.currency as Currency, exchangeRates),
+        0,
+      )
+    : null;
   const monthlyIncome = data?.monthlyComparison?.summary.totalIncome ?? 0;
   const monthlyExpense = data?.monthlyComparison?.summary.totalExpense ?? 0;
   const monthlyNetSavings = data?.monthlyComparison?.summary.netSavings ?? 0;
@@ -204,10 +210,12 @@ export default function DashboardPage() {
             ) : error ? (
               <div className="text-3xl font-bold text-destructive">Error</div>
             ) : accounts.length === 0 ? (
-              <div className="text-3xl font-bold">0 {primaryCurrency}</div>
+              <div className="text-3xl font-bold">0 VND</div>
             ) : (
               <>
-                <div className="text-3xl font-bold">{formatCurrency(primaryCurrencyBalance, primaryCurrency)}</div>
+                <div className="text-3xl font-bold">
+                  {totalBalanceVnd === null ? "--" : formatCurrency(totalBalanceVnd, "VND")}
+                </div>
                 {balancesByCurrency.size > 1 && (
                   <p className="text-xs text-muted-foreground mt-2">
                     Multi-currency: {Array.from(balancesByCurrency.entries())
@@ -235,7 +243,7 @@ export default function DashboardPage() {
               <div className="text-3xl font-bold text-destructive">Error</div>
             ) : (
               <div className="text-3xl font-bold text-blue-600">
-                {formatCurrency(monthlyIncome, primaryCurrency)}
+                {formatCurrency(monthlyIncome, "VND")}
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-2">
@@ -258,7 +266,7 @@ export default function DashboardPage() {
               <div className="text-3xl font-bold text-destructive">Error</div>
             ) : (
               <div className="text-3xl font-bold text-orange-600">
-                {formatCurrency(monthlyExpense, primaryCurrency)}
+                {formatCurrency(monthlyExpense, "VND")}
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-2">
@@ -285,7 +293,7 @@ export default function DashboardPage() {
                   monthlyNetSavings >= 0 ? "text-emerald-600" : "text-destructive"
                 }`}
               >
-                {formatCurrency(monthlyNetSavings, primaryCurrency)}
+                {formatCurrency(monthlyNetSavings, "VND")}
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-2">Income - expense (this month)</p>
@@ -297,7 +305,7 @@ export default function DashboardPage() {
         title="Top expense categories"
         description="Highest spending categories this month"
         items={topCategoryItems}
-        formatAmount={(value) => formatCurrency(value, primaryCurrency)}
+        formatAmount={(value) => formatCurrency(value, "VND")}
         listMaxHeight="220px"
       />
 
@@ -318,7 +326,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {topAccounts.map((account) => (
-                <AccountCard key={account.id} account={account} />
+                <AccountCard key={account.id} account={account} exchangeRates={exchangeRates} />
               ))}
             </div>
           </CardContent>
@@ -417,6 +425,37 @@ export default function DashboardPage() {
               </Link>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Exchange Rates */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-semibold">Exchange rate</CardTitle>
+          <CardDescription className="mt-1">Rates are refreshed once per day</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading exchange rates...</p>
+          ) : exchangeRates ? (
+            <div className="space-y-2">
+              <p className="text-sm">
+                <span className="text-muted-foreground">1 USD = </span>
+                <span className="font-semibold">{formatCurrency(exchangeRates.usdToVnd, "VND")}</span>
+              </p>
+              <p className="text-sm">
+                <span className="text-muted-foreground">1 mace = </span>
+                <span className="font-semibold">{formatCurrency(exchangeRates.maceToVnd, "VND")}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Updated: {format(parseISO(exchangeRates.fetchedAt), "MMM d, yyyy HH:mm")} ({exchangeRates.source})
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Exchange rate is temporarily unavailable.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

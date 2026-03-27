@@ -28,6 +28,7 @@ import {
   OvertimeChart,
   ReportSummaryCard,
 } from "@/components/reports";
+import { formatCurrency } from "@/lib/utils/account.utils";
 import type { IncomeCategory } from "@/types/category.types";
 import type { IncomeReportData } from "@/types/report.types";
 import type { ReportGroupBy } from "@/lib/utils/report.utils";
@@ -123,11 +124,7 @@ export default function IncomeReportPage() {
     setEndDate(format(endOfYear(now), "yyyy-MM-dd"));
   }
 
-  const formatAmount = (n: number) =>
-    n.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+  const formatAmount = (n: number) => formatCurrency(n, "VND");
 
   const breakdownItems =
     report?.byCategory.map((c) => ({
@@ -152,6 +149,9 @@ export default function IncomeReportPage() {
     report && report.overtime.length > 0
       ? report.summary.totalIncome / report.overtime.length
       : 0;
+  const multiCurrencyText = report
+    ? `Multi-currency: ${formatCurrency(report.summary.originalTotalsByCurrency.VND, "VND")}, ${formatCurrency(report.summary.originalTotalsByCurrency.USD, "USD")}, ${formatCurrency(report.summary.originalTotalsByCurrency.mace, "mace")}`
+    : "";
 
   function transactionHref(categoryId: string): string {
     const p = new URLSearchParams();
@@ -252,7 +252,7 @@ export default function IncomeReportPage() {
             <ReportSummaryCard
               title="Total income"
               value={formatAmount(report.summary.totalIncome)}
-              description="In selected range and filters"
+              description={multiCurrencyText}
             />
             <ReportSummaryCard
               title="Transactions"
@@ -262,7 +262,7 @@ export default function IncomeReportPage() {
             <ReportSummaryCard
               title={`Average income per ${groupBy}`}
               value={formatAmount(averagePerGroup)}
-              description={`Average in each ${groupBy} bucket`}
+              description={`Average in each ${groupBy} bucket (VND)`}
             />
           </div>
 

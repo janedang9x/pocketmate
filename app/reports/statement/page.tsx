@@ -7,6 +7,10 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReportSummaryCard } from "@/components/reports";
 import type { FinancialStatementData } from "@/types/report.types";
+import { getCurrencyLabel } from "@/lib/utils/account.utils";
+import type { Currency } from "@/types/account.types";
+import { formatCurrency } from "@/lib/utils/account.utils";
+import { convertAmountToVnd } from "@/lib/utils/exchange-rate.utils";
 
 type FinancialStatementResponse =
   | { success: true; data: FinancialStatementData }
@@ -46,12 +50,11 @@ export default function FinancialStatementPage() {
     }
     return grouped;
   }, [statement]);
+  const assetsMultiCurrencyText = statement
+    ? `Multi-currency: ${formatCurrency(statement.assets.originalTotalsByCurrency.VND, "VND")}, ${formatCurrency(statement.assets.originalTotalsByCurrency.USD, "USD")}, ${formatCurrency(statement.assets.originalTotalsByCurrency.mace, "mace")}`
+    : "";
 
-  const formatAmount = (n: number) =>
-    n.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+  const formatAmount = (n: number) => formatCurrency(n, "VND");
 
   function accountTransactionsHref(accountId: string): string {
     const p = new URLSearchParams();
@@ -101,18 +104,18 @@ export default function FinancialStatementPage() {
             <ReportSummaryCard
               title="Total assets"
               value={formatAmount(statement.assets.totalAssets)}
-              description="Sum of all current account balances"
+              description={assetsMultiCurrencyText}
             />
             <ReportSummaryCard
               title="Total liabilities"
               value={formatAmount(statement.liabilities.totalLiabilities)}
-              description="Borrowed minus lent outstanding"
+              description="Borrowed minus lent outstanding (VND)"
             />
             <ReportSummaryCard
               title="Net worth"
               value={formatAmount(statement.netWorth)}
               valueClassName={statement.netWorth >= 0 ? "text-emerald-600" : "text-red-600"}
-              description="Assets minus liabilities"
+              description="Assets minus liabilities (VND)"
             />
           </div>
 
@@ -131,23 +134,51 @@ export default function FinancialStatementPage() {
                     <h3 className="text-sm font-medium text-muted-foreground">{type}</h3>
                     <ul className="space-y-2">
                       {accounts.map((account) => (
-                        <li
-                          key={account.id}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2"
-                        >
-                          <div>
-                            <p className="font-medium">{account.name}</p>
-                            <p className="text-xs text-muted-foreground">{account.currency}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold">{formatAmount(account.balance)}</p>
-                            <Button asChild size="sm" variant="outline">
-                              <Link href={accountTransactionsHref(account.id)}>
-                                View transactions
-                              </Link>
-                            </Button>
-                          </div>
-                        </li>
+                        (() => {
+                          const currency = account.currency as Currency;
+                          const canConvert =
+                            statement.assets.exchangeRates !== null &&
+                            (currency === "USD" || currency === "mace");
+                          const mainAmount = canConvert
+                            ? convertAmountToVnd(
+                                account.balance,
+                                currency,
+                                statement.assets.exchangeRates!,
+                              )
+                            : account.balance;
+                          const mainCurrency: Currency = canConvert ? "VND" : currency;
+
+                          return (
+                            <li
+                              key={account.id}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2"
+                            >
+                              <div>
+                                <p className="font-medium">{account.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {getCurrencyLabel(currency)}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="text-right">
+                                  <p className="text-sm font-semibold">
+                                    {formatCurrency(mainAmount, mainCurrency)}
+                                  </p>
+                                  {canConvert && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {formatCurrency(account.balance, currency)}
+                                    </p>
+                                  )}
+                                </div>
+                                <Button asChild size="sm" variant="outline">
+                                  <Link href={accountTransactionsHref(account.id)}>
+                                    View transactions
+                                  </Link>
+                                </Button>
+                              </div>
+                            </li>
+                          );
+                        })()
                       ))}
                     </ul>
                   </div>

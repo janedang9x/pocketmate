@@ -314,8 +314,9 @@
     - [x] From account selector
     - [x] To account selector
     - [x] Amount input
-    - [x] Currency exchange field (if currencies differ)
-    - [x] Auto-calculate destination amount
+    - [x] Auto-fill second amount from cached rate when currencies differ
+    - [x] Show exchange-rate note in `1 FROM = X TO` format
+    - [x] Keep user-edited amount pair without mutating cached rates
   - [x] Implement form submission
   - [x] Update both account balances
   - [x] Create linked transaction records
@@ -509,6 +510,7 @@
   - [x] Display Net Worth prominently
   - [x] Add links to view transactions for each account/counterparty
   - [x] Make responsive for mobile
+  - [x] Normalize report amounts to converted VND across expense, income, comparison, and statement views
 
 ### Sprint 4.6: Transaction History Report
 

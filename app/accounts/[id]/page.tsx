@@ -19,6 +19,7 @@ import { AccountTypeIcon } from "@/components/accounts/AccountTypeIcon";
 import { CurrencyDisplay } from "@/components/accounts/CurrencyDisplay";
 import type { AccountDetails } from "@/types/account.types";
 import type { Currency } from "@/types/account.types";
+import { getCurrencyLabel } from "@/lib/utils/account.utils";
 
 type AccountDetailResponse =
   | { success: true; data: { account: AccountDetails } }
@@ -152,7 +153,7 @@ export default function AccountDetailPage() {
               <span className="text-sm font-medium text-muted-foreground">{account.type}</span>
             </div>
             <span className="rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
-              {account.currency}
+              {getCurrencyLabel(account.currency as Currency)}
             </span>
           </div>
         </CardHeader>

@@ -9,6 +9,8 @@ import {
   percentageOf,
   type ReportGroupBy,
 } from "@/lib/utils/report.utils";
+import { convertAmountToVnd, getLatestVndExchangeRates } from "@/lib/utils/exchange-rate.utils";
+import type { Currency } from "@/types/account.types";
 import type { Database } from "@/types/database.types";
 import type { ComparisonReportOvertimeRow } from "@/types/report.types";
 
@@ -36,7 +38,7 @@ export async function GET(req: NextRequest) {
 
     const { data: txRows, error: txError } = await supabase
       .from("transaction")
-      .select("id, type, amount, date_time")
+      .select("id, type, amount, currency, date_time")
       .eq("user_id", user.id)
       .in("type", ["Income", "Expense"])
       .gte("date_time", parsed.startDate)
@@ -49,14 +51,36 @@ export async function GET(req: NextRequest) {
 
     const transactions = (txRows ?? []) as Pick<
       TransactionRow,
-      "id" | "type" | "amount" | "date_time"
+      "id" | "type" | "amount" | "currency" | "date_time"
     >[];
+    const exchangeRates = await getLatestVndExchangeRates().catch(() => null);
 
     const incomeTx = transactions.filter((t) => t.type === "Income");
     const expenseTx = transactions.filter((t) => t.type === "Expense");
+    const originalTotalsByCurrency = {
+      income: { VND: 0, USD: 0, mace: 0 },
+      expense: { VND: 0, USD: 0, mace: 0 },
+    };
+    for (const t of incomeTx) {
+      const currency = t.currency as keyof (typeof originalTotalsByCurrency)["income"];
+      if (currency in originalTotalsByCurrency.income) {
+        originalTotalsByCurrency.income[currency] += t.amount;
+      }
+    }
+    for (const t of expenseTx) {
+      const currency = t.currency as keyof (typeof originalTotalsByCurrency)["expense"];
+      if (currency in originalTotalsByCurrency.expense) {
+        originalTotalsByCurrency.expense[currency] += t.amount;
+      }
+    }
 
-    const totalIncome = incomeTx.reduce((sum, t) => sum + t.amount, 0);
-    const totalExpense = expenseTx.reduce((sum, t) => sum + t.amount, 0);
+    const toVnd = (amount: number, currency: string): number => {
+      if (!exchangeRates) return amount;
+      return convertAmountToVnd(amount, currency as Currency, exchangeRates);
+    };
+
+    const totalIncome = incomeTx.reduce((sum, t) => sum + toVnd(t.amount, t.currency), 0);
+    const totalExpense = expenseTx.reduce((sum, t) => sum + toVnd(t.amount, t.currency), 0);
     const netSavings = totalIncome - totalExpense;
     const savingsRate = percentageOf(netSavings, totalIncome, 1);
 
@@ -65,13 +89,13 @@ export async function GET(req: NextRequest) {
     const incomeOvertime = aggregateByPeriod(
       incomeTx,
       (t) => t.date_time,
-      (t) => t.amount,
+      (t) => toVnd(t.amount, t.currency),
       groupBy,
     );
     const expenseOvertime = aggregateByPeriod(
       expenseTx,
       (t) => t.date_time,
-      (t) => t.amount,
+      (t) => toVnd(t.amount, t.currency),
       groupBy,
     );
 
@@ -98,6 +122,7 @@ export async function GET(req: NextRequest) {
         totalExpense,
         netSavings,
         savingsRate,
+        originalTotalsByCurrency,
       },
       overtime,
     });

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -15,13 +16,17 @@ import {
 } from "@/components/ui/select";
 import { AccountCard } from "@/components/accounts/AccountCard";
 import { ACCOUNT_TYPES } from "@/types/account.types";
-import type { AccountWithBalance } from "@/types/account.types";
+import type { AccountWithBalance, Currency } from "@/types/account.types";
+import type { VndExchangeRates } from "@/lib/utils/exchange-rate.utils";
+import { convertAmountToVnd } from "@/lib/utils/exchange-rate.utils";
+import { formatCurrency } from "@/lib/utils/account.utils";
 
 type AccountsResponse =
   | {
       success: true;
       data: {
         accounts: AccountWithBalance[];
+        exchangeRates: VndExchangeRates | null;
       };
     }
   | {
@@ -70,6 +75,15 @@ export default function AccountsPage() {
   });
 
   const accounts = data?.success === true ? data.data.accounts : [];
+  const exchangeRates = data?.success === true ? data.data.exchangeRates : null;
+  const totalBalanceVnd =
+    exchangeRates !== null
+      ? accounts.reduce(
+          (sum, account) =>
+            sum + convertAmountToVnd(account.balance, account.currency as Currency, exchangeRates),
+          0,
+        )
+      : null;
 
   return (
     <div className="space-y-6">
@@ -88,6 +102,32 @@ export default function AccountsPage() {
           </Link>
         </Button>
       </div>
+
+      {/* Total Balance Highlight */}
+      <Card className="shadow-sm border-primary/20 bg-primary/5">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total balance (all accounts)</p>
+              <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
+                {isLoading
+                  ? "--"
+                  : totalBalanceVnd !== null
+                    ? formatCurrency(totalBalanceVnd, "VND")
+                    : "--"}
+              </p>
+              {totalBalanceVnd === null && !isLoading && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Exchange rates unavailable, cannot convert all currencies to VND.
+                </p>
+              )}
+            </div>
+            <div className="rounded-lg bg-primary p-2.5 text-primary-foreground">
+              <Wallet className="h-5 w-5" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <div className="flex flex-col gap-4 sm:flex-row">
@@ -163,7 +203,7 @@ export default function AccountsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {accounts.map((account) => (
-                <AccountCard key={account.id} account={account} />
+                <AccountCard key={account.id} account={account} exchangeRates={exchangeRates} />
               ))}
             </div>
           )}

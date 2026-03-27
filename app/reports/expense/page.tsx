@@ -29,6 +29,7 @@ import {
   OvertimeChart,
   ReportSummaryCard,
 } from "@/components/reports";
+import { formatCurrency } from "@/lib/utils/account.utils";
 import type { ExpenseCategoryWithChildren } from "@/types/category.types";
 import type { ExpenseReportData } from "@/types/report.types";
 import type { ReportGroupBy } from "@/lib/utils/report.utils";
@@ -134,11 +135,7 @@ export default function ExpenseReportPage() {
     setEndDate(format(endOfYear(now), "yyyy-MM-dd"));
   }
 
-  const formatAmount = (n: number) =>
-    n.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+  const formatAmount = (n: number) => formatCurrency(n, "VND");
 
   const breakdownItems =
     report?.byCategory.map((c) => ({
@@ -163,6 +160,9 @@ export default function ExpenseReportPage() {
     report && report.overtime.length > 0
       ? report.summary.totalExpense / report.overtime.length
       : 0;
+  const multiCurrencyText = report
+    ? `Multi-currency: ${formatCurrency(report.summary.originalTotalsByCurrency.VND, "VND")}, ${formatCurrency(report.summary.originalTotalsByCurrency.USD, "USD")}, ${formatCurrency(report.summary.originalTotalsByCurrency.mace, "mace")}`
+    : "";
 
   function transactionHref(categoryId: string): string {
     const p = new URLSearchParams();
@@ -265,7 +265,7 @@ export default function ExpenseReportPage() {
             <ReportSummaryCard
               title="Total expense"
               value={formatAmount(report.summary.totalExpense)}
-              description="In selected range and filters"
+              description={multiCurrencyText}
             />
             <ReportSummaryCard
               title="Transactions"
@@ -275,7 +275,7 @@ export default function ExpenseReportPage() {
             <ReportSummaryCard
               title={`Average expense per ${groupBy}`}
               value={formatAmount(averagePerGroup)}
-              description={`Average in each ${groupBy} bucket`}
+              description={`Average in each ${groupBy} bucket (VND)`}
             />
           </div>
 

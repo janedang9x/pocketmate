@@ -17,8 +17,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { TransactionRow } from "@/types/transaction.types";
 import type { AccountWithBalance } from "@/types/account.types";
+import type { Currency } from "@/types/account.types";
 import type { ExpenseCategoryWithChildren, IncomeCategory } from "@/types/category.types";
 import type { Counterparty } from "@/types/counterparty.types";
+import { getCurrencyLabel } from "@/lib/utils/account.utils";
 
 type TransactionDetailResponse =
   | { success: true; data: { transaction: TransactionRow } }
@@ -323,7 +325,7 @@ export default function TransactionDetailPage() {
   const formattedAmount = `${amountSign}${transaction.amount.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })} ${transaction.currency}`;
+  })} ${getCurrencyLabel(transaction.currency as Currency)}`;
 
   const formattedDate = new Date(transaction.date_time).toLocaleString();
 

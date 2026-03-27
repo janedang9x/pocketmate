@@ -31,6 +31,11 @@ export interface ExpenseReportData {
     totalExpense: number;
     transactionCount: number;
     averageExpense: number;
+    originalTotalsByCurrency: {
+      VND: number;
+      USD: number;
+      mace: number;
+    };
   };
   byCategory: ExpenseReportCategoryRow[];
   overtime: ExpenseReportOvertimeRow[];
@@ -59,6 +64,11 @@ export interface IncomeReportData {
     totalIncome: number;
     transactionCount: number;
     averageIncome: number;
+    originalTotalsByCurrency: {
+      VND: number;
+      USD: number;
+      mace: number;
+    };
   };
   byCategory: IncomeReportCategoryRow[];
   overtime: IncomeReportOvertimeRow[];
@@ -81,6 +91,18 @@ export interface ComparisonReportData {
     totalExpense: number;
     netSavings: number;
     savingsRate: number;
+    originalTotalsByCurrency: {
+      income: {
+        VND: number;
+        USD: number;
+        mace: number;
+      };
+      expense: {
+        VND: number;
+        USD: number;
+        mace: number;
+      };
+    };
   };
   overtime: ComparisonReportOvertimeRow[];
 }
@@ -107,6 +129,15 @@ export interface FinancialStatementData {
   assets: {
     accounts: FinancialStatementAccountRow[];
     totalAssets: number;
+    exchangeRates: {
+      usdToVnd: number;
+      maceToVnd: number;
+    } | null;
+    originalTotalsByCurrency: {
+      VND: number;
+      USD: number;
+      mace: number;
+    };
   };
   liabilities: {
     borrowedFrom: FinancialStatementCounterpartyRow[];
