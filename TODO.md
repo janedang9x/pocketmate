@@ -531,6 +531,8 @@
   - [x] Add "Recent Transactions" list (last 10)
   - [x] Add mini charts (expense trend, top categories)
   - [x] Add quick links to all reports
+  - [x] Remove dashboard "Quick Actions" section
+  - [x] Add global "Add Transaction" floating action button (FAB)
   - [x] Make fully responsive
 
 ---

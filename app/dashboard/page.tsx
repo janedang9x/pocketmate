@@ -54,7 +54,7 @@ interface DashboardData {
 }
 
 /**
- * Dashboard page with summary stats, quick actions, and recent transactions.
+ * Dashboard page with summary stats, charts, and recent transactions.
  * Implements Sprint 1.4: Create Dashboard Skeleton
  * Implements Sprint 2.4: Account Dashboard Integration
  * Implements Sprint 4.7: Dashboard Finalization
@@ -323,50 +323,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Quick Actions */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold">Quick Actions</CardTitle>
-          <CardDescription className="mt-1">Common tasks and shortcuts</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
-              <Link href="/accounts/new">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center mb-3">
-                  <Wallet className="h-6 w-6 text-white" />
-                </div>
-                <span className="font-medium">Add Account</span>
-              </Link>
-            </Button>
-            <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
-              <Link href="/transactions/new">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mb-3">
-                  <Receipt className="h-6 w-6 text-white" />
-                </div>
-                <span className="font-medium">Add Transaction</span>
-              </Link>
-            </Button>
-            <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
-              <Link href="/reports">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center mb-3">
-                  <TrendingUp className="h-6 w-6 text-white" />
-                </div>
-                <span className="font-medium">View Reports</span>
-              </Link>
-            </Button>
-            <Button variant="outline" className="h-auto flex-col py-6 hover:shadow-md transition-shadow" asChild>
-              <Link href="/accounts">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center mb-3">
-                  <Wallet className="h-6 w-6 text-white" />
-                </div>
-                <span className="font-medium">View Accounts</span>
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Mini Charts */}
       <div className="grid gap-6 xl:grid-cols-2">

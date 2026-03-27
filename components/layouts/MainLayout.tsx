@@ -19,6 +19,7 @@ import {
   FileText,
   FolderTree,
   Users,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { user, loading } = useAuth();
+  const shouldShowFab = pathname !== "/transactions/new";
 
   // Extract username from email (format: username@pocketmate.local)
   const username =
@@ -174,6 +176,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <main className="flex-1 p-4 lg:p-6" style={{ backgroundColor: "hsl(var(--main-bg))" }}>{children}</main>
+
+        {/* Global primary action */}
+        {shouldShowFab && (
+          <Button
+            asChild
+            className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 h-12 -translate-x-1/2 rounded-full px-5 shadow-lg sm:bottom-6 sm:left-auto sm:right-6 sm:translate-x-0 sm:h-14 sm:px-5"
+          >
+            <Link href="/transactions/new" className="inline-flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              <span>Add Transaction</span>
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );
