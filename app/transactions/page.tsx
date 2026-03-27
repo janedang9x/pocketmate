@@ -460,8 +460,8 @@ function TransactionsPageInner() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Calendar className="hidden h-4 w-4 text-muted-foreground sm:block" />
           <Input
             type="date"
             value={startDate}
@@ -469,9 +469,9 @@ function TransactionsPageInner() {
               setStartDate(e.target.value);
               setPage(1);
             }}
-            className="h-9 text-xs"
+            className="h-9 w-full text-xs"
           />
-          <span className="text-xs text-muted-foreground">to</span>
+          <span className="px-1 text-xs text-muted-foreground">to</span>
           <Input
             type="date"
             value={endDate}
@@ -479,7 +479,7 @@ function TransactionsPageInner() {
               setEndDate(e.target.value);
               setPage(1);
             }}
-            className="h-9 text-xs"
+            className="h-9 w-full text-xs"
           />
         </div>
 
@@ -604,155 +604,227 @@ function TransactionsPageInner() {
                 )}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border bg-card">
-              <table className="min-w-full divide-y divide-border text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1"
-                        onClick={() => toggleSort("date_time")}
-                      >
-                        Date
-                        <ArrowUpDown className="h-3 w-3" />
-                      </button>
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1"
-                        onClick={() => toggleSort("type")}
-                      >
-                        Type
-                        <ArrowUpDown className="h-3 w-3" />
-                      </button>
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1"
-                        onClick={() => toggleSort("category")}
-                      >
-                        Category
-                        <ArrowUpDown className="h-3 w-3" />
-                      </button>
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
-                      Account
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-right font-medium text-muted-foreground">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1"
-                        onClick={() => toggleSort("amount")}
-                      >
-                        Amount
-                        <ArrowUpDown className="h-3 w-3" />
-                      </button>
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-right font-medium text-muted-foreground">
-                      Balance after
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
-                      Notes
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {sortedTransactions.map((txn) => {
-                    const categoryId = txn.expense_category_id ?? txn.income_category_id ?? undefined;
-                    const categoryLabel = categoryId ? categoryNameById.get(categoryId) ?? "-" : "-";
+            <>
+              <div className="space-y-3 md:hidden">
+                {sortedTransactions.map((txn) => {
+                  const categoryId = txn.expense_category_id ?? txn.income_category_id ?? undefined;
+                  const categoryLabel = categoryId ? categoryNameById.get(categoryId) ?? "-" : "-";
 
-                    let accountLabel = "-";
-                    if (txn.type === "Expense" && txn.from_account_id) {
-                      accountLabel = accountNameById.get(txn.from_account_id) ?? "-";
-                    } else if (txn.type === "Income" && txn.to_account_id) {
-                      accountLabel = accountNameById.get(txn.to_account_id) ?? "-";
-                    } else if (txn.type === "Transfer") {
-                      const fromName = txn.from_account_id
-                        ? accountNameById.get(txn.from_account_id) ?? ""
-                        : "";
-                      const toName = txn.to_account_id
-                        ? accountNameById.get(txn.to_account_id) ?? ""
-                        : "";
-                      accountLabel = [fromName, toName].filter(Boolean).join(" → ") || "-";
-                    } else if (txn.type === "Borrow") {
-                      const fromName = txn.from_account_id
-                        ? accountNameById.get(txn.from_account_id) ?? ""
-                        : "";
-                      const toName = txn.to_account_id
-                        ? accountNameById.get(txn.to_account_id) ?? ""
-                        : "";
-                      accountLabel = [fromName, toName].filter(Boolean).join(" ↔ ") || "-";
-                    }
-
-                    const counterpartyLabel = txn.counterparty_id
-                      ? counterpartyNameById.get(txn.counterparty_id) ?? ""
+                  let accountLabel = "-";
+                  if (txn.type === "Expense" && txn.from_account_id) {
+                    accountLabel = accountNameById.get(txn.from_account_id) ?? "-";
+                  } else if (txn.type === "Income" && txn.to_account_id) {
+                    accountLabel = accountNameById.get(txn.to_account_id) ?? "-";
+                  } else if (txn.type === "Transfer") {
+                    const fromName = txn.from_account_id
+                      ? accountNameById.get(txn.from_account_id) ?? ""
                       : "";
+                    const toName = txn.to_account_id ? accountNameById.get(txn.to_account_id) ?? "" : "";
+                    accountLabel = [fromName, toName].filter(Boolean).join(" → ") || "-";
+                  } else if (txn.type === "Borrow") {
+                    const fromName = txn.from_account_id
+                      ? accountNameById.get(txn.from_account_id) ?? ""
+                      : "";
+                    const toName = txn.to_account_id ? accountNameById.get(txn.to_account_id) ?? "" : "";
+                    accountLabel = [fromName, toName].filter(Boolean).join(" ↔ ") || "-";
+                  }
 
-                    const amountSign =
-                      txn.type === "Income" || (txn.type === "Borrow" && txn.to_account_id)
-                        ? "+"
-                        : "-";
+                  const counterpartyLabel = txn.counterparty_id
+                    ? counterpartyNameById.get(txn.counterparty_id) ?? ""
+                    : "";
 
-                    const amountClassName =
-                      amountSign === "+"
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-red-600 dark:text-red-400";
+                  const amountSign =
+                    txn.type === "Income" || (txn.type === "Borrow" && txn.to_account_id) ? "+" : "-";
 
-                    const formattedDate = new Date(txn.date_time).toLocaleString();
+                  const amountClassName =
+                    amountSign === "+"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400";
 
-                    return (
-                      <tr key={txn.id} className="hover:bg-muted/40">
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
-                          <Link href={`/transactions/${txn.id}`} className="hover:underline">
+                  const formattedDate = new Date(txn.date_time).toLocaleString();
+
+                  return (
+                    <div key={txn.id} className="rounded-lg border bg-card p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <Link
+                            href={`/transactions/${txn.id}`}
+                            className="text-xs text-muted-foreground hover:underline"
+                          >
                             {formattedDate}
                           </Link>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-medium">
-                          {txn.type}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs">
+                          <p className="mt-1 text-sm font-medium">{txn.type}</p>
+                        </div>
+                        <span className={`text-sm font-semibold ${amountClassName}`}>
+                          {amountSign}
+                          {txn.amount.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          {txn.currency}
+                        </span>
+                      </div>
+                      <div className="mt-2 space-y-1 text-xs">
+                        <p>
+                          <span className="text-muted-foreground">Category: </span>
                           {categoryLabel}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs">
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">Account: </span>
                           {accountLabel}
-                          {counterpartyLabel && (
-                            <span className="ml-1 text-[10px] text-muted-foreground">
-                              · {counterpartyLabel}
-                            </span>
-                          )}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-semibold">
-                          <span className={amountClassName}>
-                            {amountSign}
-                            {txn.amount.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}{" "}
-                            {txn.currency}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-muted-foreground">
-                          {/* Balance-after per transaction will be provided by reporting layer in Sprint 4. */}
+                          {counterpartyLabel ? ` · ${counterpartyLabel}` : ""}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">Balance after: </span>
                           N/A
-                        </td>
-                        <td className="max-w-[180px] px-3 py-2 text-xs text-muted-foreground">
-                          <span className="line-clamp-1">
-                            {txn.details || "-"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </p>
+                        <p className="line-clamp-2 text-muted-foreground">{txn.details || "-"}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
+                <table className="min-w-full divide-y divide-border text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1"
+                          onClick={() => toggleSort("date_time")}
+                        >
+                          Date
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1"
+                          onClick={() => toggleSort("type")}
+                        >
+                          Type
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1"
+                          onClick={() => toggleSort("category")}
+                        >
+                          Category
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
+                        Account
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 text-right font-medium text-muted-foreground">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1"
+                          onClick={() => toggleSort("amount")}
+                        >
+                          Amount
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 text-right font-medium text-muted-foreground">
+                        Balance after
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
+                        Notes
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {sortedTransactions.map((txn) => {
+                      const categoryId = txn.expense_category_id ?? txn.income_category_id ?? undefined;
+                      const categoryLabel = categoryId ? categoryNameById.get(categoryId) ?? "-" : "-";
+
+                      let accountLabel = "-";
+                      if (txn.type === "Expense" && txn.from_account_id) {
+                        accountLabel = accountNameById.get(txn.from_account_id) ?? "-";
+                      } else if (txn.type === "Income" && txn.to_account_id) {
+                        accountLabel = accountNameById.get(txn.to_account_id) ?? "-";
+                      } else if (txn.type === "Transfer") {
+                        const fromName = txn.from_account_id
+                          ? accountNameById.get(txn.from_account_id) ?? ""
+                          : "";
+                        const toName = txn.to_account_id ? accountNameById.get(txn.to_account_id) ?? "" : "";
+                        accountLabel = [fromName, toName].filter(Boolean).join(" → ") || "-";
+                      } else if (txn.type === "Borrow") {
+                        const fromName = txn.from_account_id
+                          ? accountNameById.get(txn.from_account_id) ?? ""
+                          : "";
+                        const toName = txn.to_account_id ? accountNameById.get(txn.to_account_id) ?? "" : "";
+                        accountLabel = [fromName, toName].filter(Boolean).join(" ↔ ") || "-";
+                      }
+
+                      const counterpartyLabel = txn.counterparty_id
+                        ? counterpartyNameById.get(txn.counterparty_id) ?? ""
+                        : "";
+
+                      const amountSign =
+                        txn.type === "Income" || (txn.type === "Borrow" && txn.to_account_id)
+                          ? "+"
+                          : "-";
+
+                      const amountClassName =
+                        amountSign === "+"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-600 dark:text-red-400";
+
+                      const formattedDate = new Date(txn.date_time).toLocaleString();
+
+                      return (
+                        <tr key={txn.id} className="hover:bg-muted/40">
+                          <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
+                            <Link href={`/transactions/${txn.id}`} className="hover:underline">
+                              {formattedDate}
+                            </Link>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2 text-xs font-medium">{txn.type}</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-xs">{categoryLabel}</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-xs">
+                            {accountLabel}
+                            {counterpartyLabel && (
+                              <span className="ml-1 text-[10px] text-muted-foreground">
+                                · {counterpartyLabel}
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-semibold">
+                            <span className={amountClassName}>
+                              {amountSign}
+                              {txn.amount.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              {txn.currency}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-muted-foreground">
+                            {/* Balance-after per transaction will be provided by reporting layer in Sprint 4. */}
+                            N/A
+                          </td>
+                          <td className="max-w-[180px] px-3 py-2 text-xs text-muted-foreground">
+                            <span className="line-clamp-1">{txn.details || "-"}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
 
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 text-xs text-muted-foreground">
+            <div className="flex flex-col gap-2 pt-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <div>
                 Page {pagination.page} of {pagination.totalPages} ·{" "}
                 {pagination.total} transaction{pagination.total === 1 ? "" : "s"}
