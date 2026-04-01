@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError, z } from "zod";
 
+import { accessTokenCookieOptions, refreshTokenCookieOptions } from "@/lib/auth-session";
 import { ensureUserAccountExists } from "@/lib/user-account.server";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
@@ -16,13 +17,6 @@ function jsonError(
 ): NextResponse<{ success: false; error: string; code: string }> {
   return NextResponse.json({ success: false, error, code }, { status });
 }
-
-const cookieBase = {
-  httpOnly: true,
-  sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-};
 
 /**
  * Validates tokens from the browser after OAuth PKCE exchange, sets the same cookies
@@ -62,10 +56,10 @@ export async function POST(req: NextRequest) {
       { status: 200 },
     );
 
-    response.cookies.set("pm_access_token", parsed.accessToken, cookieBase);
+    response.cookies.set("pm_access_token", parsed.accessToken, accessTokenCookieOptions);
 
     if (parsed.refreshToken) {
-      response.cookies.set("pm_refresh_token", parsed.refreshToken, cookieBase);
+      response.cookies.set("pm_refresh_token", parsed.refreshToken, refreshTokenCookieOptions);
     }
 
     return response;

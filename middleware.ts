@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { accessTokenCookieOptions, refreshTokenCookieOptions } from "@/lib/auth-session";
 import { enforceApiRateLimit } from "@/lib/ratelimit";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
@@ -11,6 +12,11 @@ import { createSupabaseServerClient } from "@/lib/supabase";
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const redirectToLogin = () => {
+    const loginUrl = new URL("/auth/login", req.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
+  };
 
   if (pathname.startsWith("/api/")) {
     const rateLimited = await enforceApiRateLimit(req, pathname);
@@ -42,12 +48,48 @@ export async function middleware(req: NextRequest) {
   const accessToken =
     req.cookies.get("pm_access_token")?.value ||
     req.headers.get("Authorization")?.replace("Bearer ", "");
+  const refreshToken = req.cookies.get("pm_refresh_token")?.value;
 
-  // If no token, redirect to login
+  const tryRefreshSession = async () => {
+    if (!refreshToken) return null;
+
+    const supabase = createSupabaseServerClient();
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken ?? "",
+      refresh_token: refreshToken,
+    });
+
+    if (error || !data.session?.access_token || !data.session.refresh_token) {
+      return null;
+    }
+
+    return data.session;
+  };
+
+  // If no access token, try refresh with refresh token before redirecting.
   if (!accessToken) {
-    const loginUrl = new URL("/auth/login", req.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+    try {
+      const refreshedSession = await tryRefreshSession();
+      if (!refreshedSession) {
+        return redirectToLogin();
+      }
+
+      const response = NextResponse.next();
+      response.cookies.set(
+        "pm_access_token",
+        refreshedSession.access_token,
+        accessTokenCookieOptions,
+      );
+      response.cookies.set(
+        "pm_refresh_token",
+        refreshedSession.refresh_token,
+        refreshTokenCookieOptions,
+      );
+      return response;
+    } catch (error) {
+      console.error("Middleware session refresh error:", error);
+      return redirectToLogin();
+    }
   }
 
   // Verify token with Supabase
@@ -60,19 +102,52 @@ export async function middleware(req: NextRequest) {
 
     // If token is invalid or user doesn't exist, redirect to login
     if (error || !user) {
-      const loginUrl = new URL("/auth/login", req.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
+      const refreshedSession = await tryRefreshSession();
+      if (!refreshedSession) {
+        return redirectToLogin();
+      }
+
+      const response = NextResponse.next();
+      response.cookies.set(
+        "pm_access_token",
+        refreshedSession.access_token,
+        accessTokenCookieOptions,
+      );
+      response.cookies.set(
+        "pm_refresh_token",
+        refreshedSession.refresh_token,
+        refreshTokenCookieOptions,
+      );
+      return response;
     }
 
     // User is authenticated, allow request to proceed
     return NextResponse.next();
   } catch (error) {
-    // On error, redirect to login
+    // On auth errors, attempt refresh before redirecting.
     console.error("Middleware auth check error:", error);
-    const loginUrl = new URL("/auth/login", req.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+    try {
+      const refreshedSession = await tryRefreshSession();
+      if (!refreshedSession) {
+        return redirectToLogin();
+      }
+
+      const response = NextResponse.next();
+      response.cookies.set(
+        "pm_access_token",
+        refreshedSession.access_token,
+        accessTokenCookieOptions,
+      );
+      response.cookies.set(
+        "pm_refresh_token",
+        refreshedSession.refresh_token,
+        refreshTokenCookieOptions,
+      );
+      return response;
+    } catch (refreshError) {
+      console.error("Middleware refresh fallback error:", refreshError);
+      return redirectToLogin();
+    }
   }
 }
 

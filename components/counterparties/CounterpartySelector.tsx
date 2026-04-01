@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SearchableSelect, type SearchableSelectItem } from "@/components/ui/searchable-select";
 import { SelectSeparator } from "@/components/ui/select";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
 import type { Counterparty } from "@/types/counterparty.types";
 
 interface CounterpartySelectorProps<TFieldValues extends FieldValues> {
@@ -40,6 +41,9 @@ export function CounterpartySelector<TFieldValues extends FieldValues>({
   allowNone = true,
   onCreateNew,
 }: CounterpartySelectorProps<TFieldValues>) {
+  const { messages: m } = useLocaleContext();
+  const tf = m.transactionForm;
+
   const items: SearchableSelectItem[] = useMemo(() => {
     const base: SearchableSelectItem[] = allowNone
       ? [{ value: "__none__", label: "None", searchText: "none" }]
@@ -64,7 +68,10 @@ export function CounterpartySelector<TFieldValues extends FieldValues>({
           onChange={(v) => field.onChange(v === "__none__" ? null : v)}
           items={items}
           placeholder={placeholder}
-          searchPlaceholder="Search counterparties..."
+          searchPlaceholder={`${tf.counterparty}...`}
+          mobileFullScreen
+          mobileMaxWidth={1023}
+          mobileTitle={tf.counterparty}
           header={
             onCreateNew ? (
               <>

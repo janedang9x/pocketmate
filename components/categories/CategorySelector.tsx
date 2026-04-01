@@ -120,6 +120,9 @@ export function CategorySelector<TFieldValues extends FieldValues>({
           items={items}
           placeholder={placeholder}
           searchPlaceholder={searchPlaceholder}
+          mobileFullScreen
+          mobileMaxWidth={1023}
+          mobileTitle={type === "expense" ? tf.expenseCategory : tf.incomeCategory}
           header={
             onCreateNew ? (
               <>

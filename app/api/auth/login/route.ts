@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
 
 import { loginSchema, normalizeUsername, usernameToAuthEmail } from "@/lib/auth";
+import { accessTokenCookieOptions, refreshTokenCookieOptions } from "@/lib/auth-session";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
 function jsonError(
@@ -56,20 +57,10 @@ export async function POST(req: NextRequest) {
       { status: 200 },
     );
 
-    response.cookies.set("pm_access_token", data.session.access_token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    });
+    response.cookies.set("pm_access_token", data.session.access_token, accessTokenCookieOptions);
 
     if (data.session.refresh_token) {
-      response.cookies.set("pm_refresh_token", data.session.refresh_token, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-      });
+      response.cookies.set("pm_refresh_token", data.session.refresh_token, refreshTokenCookieOptions);
     }
 
     return response;

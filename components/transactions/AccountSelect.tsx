@@ -18,6 +18,7 @@ interface AccountSelectProps {
   placeholder?: string;
   /** When true, show currency code next to account name (e.g. transfers). */
   showCurrencyLabel?: boolean;
+  mobileTitle?: string;
   onRequestCreate: () => void;
 }
 
@@ -31,6 +32,7 @@ export function AccountSelect({
   accounts,
   placeholder,
   showCurrencyLabel = false,
+  mobileTitle,
   onRequestCreate,
 }: AccountSelectProps) {
   const { messages: m } = useLocaleContext();
@@ -60,6 +62,9 @@ export function AccountSelect({
       items={items}
       placeholder={ph}
       searchPlaceholder={tf.searchAccounts}
+      mobileFullScreen
+      mobileMaxWidth={1023}
+      mobileTitle={mobileTitle ?? tf.phAccount}
       header={
         <>
           <div

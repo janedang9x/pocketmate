@@ -96,6 +96,7 @@
   - [x] Create `/middleware.ts` for route protection
   - [x] Protect all routes except `/auth/*` and `/api/auth/*`
   - [x] Redirect unauthenticated users to login
+  - [x] Refresh expired access tokens using refresh token cookies for persistent sessions
   - [x] Create auth state management
 
 - [x] **Google OAuth (Supabase Auth)**
@@ -299,6 +300,7 @@
   - [x] Create dynamic form that changes based on type
   - [x] Add date/time picker
   - [x] Add notes/details field
+  - [x] Improve mobile UX: open Account/Category/Counterparty selectors in full-screen picker view
 
 - [x] **Expense Transaction Flow** (FR-TXN-001)
   - [x] Create `/app/transactions/new/page.tsx`

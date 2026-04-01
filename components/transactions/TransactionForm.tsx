@@ -629,6 +629,7 @@ export function TransactionForm({
                     value={field.value}
                     onChange={field.onChange}
                     accounts={accounts}
+                    mobileTitle={tf.fromAccount}
                     onRequestCreate={() => inlineCreate.openCreateAccount("fromAccountId")}
                   />
                 )}
@@ -726,6 +727,7 @@ export function TransactionForm({
                     value={field.value}
                     onChange={field.onChange}
                     accounts={accounts}
+                    mobileTitle={tf.toAccount}
                     onRequestCreate={() => inlineCreate.openCreateAccount("toAccountId")}
                   />
                 )}
@@ -790,6 +792,7 @@ export function TransactionForm({
                     onChange={field.onChange}
                     accounts={accounts}
                     showCurrencyLabel
+                    mobileTitle={tf.fromAccount}
                     onRequestCreate={() => inlineCreate.openCreateAccount("fromAccountId")}
                   />
                 )}
@@ -817,6 +820,7 @@ export function TransactionForm({
                     onChange={field.onChange}
                     accounts={accounts}
                     showCurrencyLabel
+                    mobileTitle={tf.toAccount}
                     onRequestCreate={() => inlineCreate.openCreateAccount("toAccountId")}
                   />
                 )}
@@ -971,6 +975,7 @@ export function TransactionForm({
                     value={field.value}
                     onChange={field.onChange}
                     accounts={accounts}
+                    mobileTitle={tf.toAccount}
                     onRequestCreate={() => inlineCreate.openCreateAccount("toAccountId")}
                   />
                 )}
@@ -1020,6 +1025,7 @@ export function TransactionForm({
                     value={field.value}
                     onChange={field.onChange}
                     accounts={accounts}
+                    mobileTitle={tf.fromAccount}
                     onRequestCreate={() => inlineCreate.openCreateAccount("fromAccountId")}
                   />
                 )}
