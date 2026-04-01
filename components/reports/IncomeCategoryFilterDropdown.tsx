@@ -10,6 +10,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { localizedSeedCategoryName } from "@/lib/i18n/seed-category-labels";
+import type { Locale } from "@/lib/i18n/types";
 import { cn } from "@/lib/utils";
 import type { IncomeCategory } from "@/types/category.types";
 
@@ -23,14 +26,27 @@ export interface IncomeCategoryFilterDropdownProps {
   className?: string;
 }
 
-function summarizeSelection(categories: IncomeCategoryWithFlags[], selected: Set<string>): string {
-  if (selected.size === 0) return "All categories";
+function summarizeSelection(
+  categories: IncomeCategoryWithFlags[],
+  selected: Set<string>,
+  locale: Locale,
+  allLabel: string,
+  selectedCountLabel: string,
+): string {
+  if (selected.size === 0) return allLabel;
 
   const names = categories
     .filter((c) => selected.has(c.id))
-    .map((c) => c.name);
+    .map((c) =>
+      localizedSeedCategoryName(
+        c.name,
+        c.isDefault ?? c.user_id === null,
+        locale,
+        "income",
+      ),
+    );
 
-  if (names.length === 0) return `${selected.size} selected`;
+  if (names.length === 0) return selectedCountLabel.replace("{n}", String(selected.size));
   if (names.length <= 2) return names.join(", ");
   return `${names.slice(0, 2).join(", ")} +${names.length - 2}`;
 }
@@ -46,10 +62,19 @@ export function IncomeCategoryFilterDropdown({
   className,
 }: IncomeCategoryFilterDropdownProps) {
   const [open, setOpen] = useState(false);
+  const { messages: m, locale } = useLocaleContext();
+  const r = m.reports;
 
   const summary = useMemo(
-    () => summarizeSelection(categories, selectedIds),
-    [categories, selectedIds],
+    () =>
+      summarizeSelection(
+        categories,
+        selectedIds,
+        locale,
+        r.filterAllCategoriesSummary,
+        r.filterSelectedCount,
+      ),
+    [categories, selectedIds, locale, r.filterAllCategoriesSummary, r.filterSelectedCount],
   );
 
   function clearAll() {
@@ -65,10 +90,8 @@ export function IncomeCategoryFilterDropdown({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <Label className="text-xs text-muted-foreground">Categories</Label>
-      <p className="text-xs text-muted-foreground">
-        Open the list to filter. Leave empty to include all categories.
-      </p>
+      <Label className="text-xs text-muted-foreground">{r.filterCategoriesLabel}</Label>
+      <p className="text-xs text-muted-foreground">{r.filterIncomeHint}</p>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -83,7 +106,7 @@ export function IncomeCategoryFilterDropdown({
               <Tags className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
               <span className="truncate text-left">{summary}</span>
             </span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -93,7 +116,7 @@ export function IncomeCategoryFilterDropdown({
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
             <span className="text-xs font-medium text-muted-foreground">
-              Income categories
+              {r.filterIncomeListTitle}
             </span>
             <Button
               type="button"
@@ -103,16 +126,16 @@ export function IncomeCategoryFilterDropdown({
               onClick={clearAll}
               disabled={selectedIds.size === 0}
             >
-              Clear
+              {r.filterClear}
             </Button>
           </div>
           <div className="max-h-[min(320px,50vh)] overflow-y-auto p-2">
             {categories.length === 0 ? (
               <p className="px-2 py-4 text-center text-sm text-muted-foreground">
-                No categories
+                {r.filterNoCategories}
               </p>
             ) : (
-              <ul className="space-y-1" role="group" aria-label="Income categories">
+              <ul className="space-y-1" role="group" aria-label={r.filterIncomeListTitle}>
                 {categories.map((cat) => (
                   <li key={cat.id}>
                     <div className="flex items-start gap-2 rounded-sm px-2 py-1.5 hover:bg-muted/60">
@@ -127,7 +150,12 @@ export function IncomeCategoryFilterDropdown({
                         htmlFor={`inc-cat-${cat.id}`}
                         className="cursor-pointer text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
-                        {cat.name}
+                        {localizedSeedCategoryName(
+                          cat.name,
+                          cat.isDefault ?? cat.user_id === null,
+                          locale,
+                          "income",
+                        )}
                       </label>
                     </div>
                   </li>

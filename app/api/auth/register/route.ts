@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
 
 import { registerSchema, normalizeUsername, usernameToAuthEmail } from "@/lib/auth";
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase";
+import { ensureUserAccountExists } from "@/lib/user-account.server";
 
 function jsonError(
   status: number,
@@ -21,47 +22,6 @@ function isDuplicateSignupError(message?: string) {
     normalized.includes("duplicate") ||
     normalized.includes("already exists")
   );
-}
-
-async function createUserProfileRecord(params: {
-  userId: string;
-  username: string;
-  accessToken: string;
-}) {
-  const { userId, username, accessToken } = params;
-
-  // Prefer creating via an authenticated client so RLS stays meaningful.
-  const authed = createSupabaseServerClient({ accessToken });
-
-  // NOTE: Current schema has a required `password` column on `user_account`.
-  // We do NOT store the user's actual password (Supabase Auth owns credential storage).
-  const legacyPlaceholderPassword = "__managed_by_supabase_auth__";
-  const baseProfileRow = {
-    id: userId,
-    user_name: username,
-    is_active: true,
-  };
-
-  const attempt = await authed.from("user_account").insert({
-    ...baseProfileRow,
-    password: legacyPlaceholderPassword,
-  });
-
-  if (!attempt.error) return;
-
-  // Fallback: if RLS blocks inserts (or other policies), allow service role to create profile.
-  try {
-    const admin = createSupabaseAdminClient();
-    const adminAttempt = await admin.from("user_account").insert({
-      ...baseProfileRow,
-      password: legacyPlaceholderPassword,
-    });
-    if (!adminAttempt.error) return;
-  } catch {
-    // ignore: service role key missing, surface original error below
-  }
-
-  throw attempt.error;
 }
 
 /**
@@ -108,10 +68,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await createUserProfileRecord({
-      userId: data.user.id,
-      username,
+    await ensureUserAccountExists({
+      user: data.user,
       accessToken: data.session.access_token,
+      explicitUsername: username,
     });
 
     const response = NextResponse.json(
@@ -124,6 +84,7 @@ export async function POST(req: NextRequest) {
             createdAt: data.user.created_at,
           },
           token: data.session.access_token,
+          refreshToken: data.session.refresh_token || "",
         },
         message: "Account created successfully",
       },

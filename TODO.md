@@ -77,6 +77,7 @@
   - [x] Implement password validation (min 8 chars)
   - [x] Create API route: `POST /api/auth/register`
   - [x] Handle successful registration → auto login
+  - [x] Auto-create a default financial account on successful signup
   - [x] Add error handling (duplicate username, etc.)
 - [x] **Build Login Flow** (FR-AUTH-002)
   - [x] Create `/app/auth/login/page.tsx`
@@ -96,6 +97,15 @@
   - [x] Protect all routes except `/auth/*` and `/api/auth/*`
   - [x] Redirect unauthenticated users to login
   - [x] Create auth state management
+
+- [x] **Google OAuth (Supabase Auth)**
+  - [x] Login/register: `Continue with Google` → `/auth/callback` → `POST /api/auth/oauth-session` (cookies + `user_account` row)
+  - [x] Redirect URLs configured in Supabase (site URL + `/auth/callback`)
+
+- [x] **API rate limiting (Upstash Redis)**
+  - [x] Middleware: per-IP sliding window on all `/api/*` (100/min general; 10/min login, register & oauth-session)
+  - [x] `429` + `RATE_LIMIT` + `Retry-After` header; fail open if Upstash env missing
+  - [x] Vitest unit tests + optional integration tests when `UPSTASH_*` is set
 
 ### Sprint 1.4: Core Layout & Navigation
 
@@ -241,6 +251,7 @@
   - [x] Display default categories (read-only)
   - [x] Display custom categories (editable)
   - [x] Add "Create Custom Category" form
+  - [x] Add category icon support (default icons + custom icon picker + transaction dropdown icons)
   - [x] Implement edit/delete for custom categories
   - [x] Prevent deletion if category has transactions
 

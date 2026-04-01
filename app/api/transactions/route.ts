@@ -46,7 +46,14 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from("transaction")
-      .select("*", { count: "exact" })
+      .select(
+        `
+        *,
+        expense_categories ( name ),
+        income_categories ( name )
+      `,
+        { count: "exact" },
+      )
       .eq("user_id", user.id);
 
     if (validatedQuery.type) {
@@ -93,7 +100,20 @@ export async function GET(req: NextRequest) {
     const total = count ?? 0;
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
-    const transactions = (data ?? []) as TransactionRow[];
+    type RowWithJoins = TransactionRow & {
+      expense_categories: { name: string } | null;
+      income_categories: { name: string } | null;
+    };
+
+    const transactions = (data ?? []).map((row) => {
+      const r = row as RowWithJoins;
+      const { expense_categories, income_categories, ...base } = r;
+      return {
+        ...base,
+        expense_category_name: expense_categories?.name ?? null,
+        income_category_name: income_categories?.name ?? null,
+      };
+    });
 
     return jsonSuccess({
       transactions,

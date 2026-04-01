@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
       await Promise.all([
         supabase
           .from("expense_categories")
-          .select("id, name, parent_category_id")
+          .select("id, name, parent_category_id, user_id")
           .or(`user_id.is.null,user_id.eq.${user.id}`),
         supabase
           .from("transaction")
@@ -151,6 +151,7 @@ export async function GET(req: NextRequest) {
             amount: b.amount,
             percentage: percentageOf(b.amount, bucket.amount),
             transactionCount: b.count,
+            isSystemDefault: child.user_id === null,
           });
         }
 
@@ -162,6 +163,8 @@ export async function GET(req: NextRequest) {
             amount: directOnParent.amount,
             percentage: percentageOf(directOnParent.amount, bucket.amount),
             transactionCount: directOnParent.count,
+            isParentGeneral: true,
+            parentIsSystemDefault: cat ? cat.user_id === null : false,
           });
         }
 
@@ -174,6 +177,7 @@ export async function GET(req: NextRequest) {
           percentage: percentageOf(bucket.amount, totalExpense),
           transactionCount: bucket.count,
           subcategories,
+          isSystemDefault: cat ? cat.user_id === null : false,
         };
       })
       .sort((a, b) => b.amount - a.amount);

@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       await Promise.all([
         supabase
           .from("income_categories")
-          .select("id, name")
+          .select("id, name, user_id")
           .or(`user_id.is.null,user_id.eq.${user.id}`),
         supabase
           .from("transaction")
@@ -60,7 +60,10 @@ export async function GET(req: NextRequest) {
       return jsonError(500, "Failed to build income report", "SERVER_ERROR");
     }
 
-    const categoryList = (categories ?? []) as Pick<IncomeCategoryRow, "id" | "name">[];
+    const categoryList = (categories ?? []) as Pick<
+      IncomeCategoryRow,
+      "id" | "name" | "user_id"
+    >[];
     const catById = new Map(categoryList.map((c) => [c.id, c]));
     const selectedIds = parsed.categoryIds;
     const hasCategoryFilter = selectedIds.length > 0;
@@ -104,16 +107,20 @@ export async function GET(req: NextRequest) {
     }
 
     const byCategory: IncomeReportCategoryRow[] = [...byCategoryMap.entries()]
-      .map(([categoryId, bucket]) => ({
-        categoryId,
-        categoryName:
-          categoryId === UNCATEGORIZED_ID
+      .map(([categoryId, bucket]) => {
+        const row = catById.get(categoryId);
+        const isUncat = categoryId === UNCATEGORIZED_ID;
+        return {
+          categoryId,
+          categoryName: isUncat
             ? "Uncategorized"
-            : catById.get(categoryId)?.name ?? "Unknown category",
-        amount: bucket.amount,
-        percentage: percentageOf(bucket.amount, totalIncome),
-        transactionCount: bucket.count,
-      }))
+            : row?.name ?? "Unknown category",
+          amount: bucket.amount,
+          percentage: percentageOf(bucket.amount, totalIncome),
+          transactionCount: bucket.count,
+          isSystemDefault: !isUncat && row ? row.user_id === null : undefined,
+        };
+      })
       .sort((a, b) => b.amount - a.amount);
 
     const overtime = aggregateByPeriod(

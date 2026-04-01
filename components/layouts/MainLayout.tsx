@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
 import { logout } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,19 +25,27 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type NavKey =
+  | "dashboard"
+  | "accounts"
+  | "transactions"
+  | "reports"
+  | "categories"
+  | "counterparties";
+
 interface NavItem {
-  label: string;
+  navKey: NavKey;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Accounts", href: "/accounts", icon: Wallet },
-  { label: "Transactions", href: "/transactions", icon: Receipt },
-  { label: "Reports", href: "/reports", icon: BarChart3 },
-  { label: "Categories", href: "/settings/categories", icon: FolderTree },
-  { label: "Counterparties", href: "/settings/counterparties", icon: Users },
+  { navKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { navKey: "accounts", href: "/accounts", icon: Wallet },
+  { navKey: "transactions", href: "/transactions", icon: Receipt },
+  { navKey: "reports", href: "/reports", icon: BarChart3 },
+  { navKey: "categories", href: "/settings/categories", icon: FolderTree },
+  { navKey: "counterparties", href: "/settings/counterparties", icon: Users },
 ];
 
 /**
@@ -46,11 +56,23 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { user, loading } = useAuth();
+  const { mainLayout: t } = useLocaleContext();
   const shouldShowFab = pathname !== "/transactions/new";
 
-  // Extract username from email (format: username@pocketmate.local)
+  const metaName =
+    typeof user?.user_metadata?.username === "string"
+      ? user.user_metadata.username
+      : typeof user?.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : typeof user?.user_metadata?.name === "string"
+          ? user.user_metadata.name
+          : null;
   const username =
-    user?.email?.replace("@pocketmate.local", "") || user?.email || "User";
+    metaName?.trim() ||
+    user?.email?.replace("@pocketmate.local", "")?.split("@")[0] ||
+    user?.email?.split("@")[0] ||
+    user?.email ||
+    t.userFallback;
 
   async function handleLogout() {
     await logout();
@@ -62,7 +84,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{t.loading}</p>
         </div>
       </div>
     );
@@ -126,7 +148,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   onClick={() => setSidebarOpen(false)}
                 >
                   <Icon className={cn("h-5 w-5", isActive ? "text-white" : "")} />
-                  {item.label}
+                  {t.nav[item.navKey]}
                 </Link>
               );
             })}
@@ -135,10 +157,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           {/* Pro Tip Section */}
           <div className="border-t border-white/10 p-4">
             <div className="rounded-lg bg-sidebar-hover/50 p-3">
-              <p className="text-xs font-semibold text-sidebar-foreground mb-1">Pro Tip</p>
-              <p className="text-xs text-sidebar-foreground/70">
-                Track your expenses regularly to stay on top of your finances.
-              </p>
+              <p className="text-xs font-semibold text-sidebar-foreground mb-1">{t.proTipTitle}</p>
+              <p className="text-xs text-sidebar-foreground/70">{t.proTipBody}</p>
             </div>
           </div>
         </div>
@@ -167,9 +187,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </div>
               <span className="text-sm font-medium">{username}</span>
             </div>
+            <LanguageSwitcher />
             <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
               <LogOut className="h-4 w-4 text-muted-foreground" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t.logout}</span>
             </Button>
           </div>
         </header>
@@ -185,7 +206,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           >
             <Link href="/transactions/new" className="inline-flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              <span>Add Transaction</span>
+              <span>{t.addTransaction}</span>
             </Link>
           </Button>
         )}

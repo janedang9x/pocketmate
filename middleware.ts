@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { enforceApiRateLimit } from "@/lib/ratelimit";
 import { createSupabaseServerClient } from "@/lib/supabase";
 
 /**
@@ -10,6 +11,13 @@ import { createSupabaseServerClient } from "@/lib/supabase";
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname.startsWith("/api/")) {
+    const rateLimited = await enforceApiRateLimit(req, pathname);
+    if (rateLimited) {
+      return rateLimited;
+    }
+  }
 
   // Allow public access to auth pages and auth API routes
   if (pathname.startsWith("/auth/") || pathname.startsWith("/api/auth/")) {

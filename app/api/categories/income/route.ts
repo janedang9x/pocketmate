@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { authenticateRequest, jsonError, jsonSuccess } from "@/lib/utils/api";
 import { createIncomeCategorySchema } from "@/lib/schemas/category.schema";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { fetchHiddenDefaultCategoryIds } from "@/lib/category-defaults";
 import type { IncomeCategory } from "@/types/category.types";
 import type { Database } from "@/types/database.types";
 
@@ -41,7 +42,10 @@ export async function GET(req: NextRequest) {
       return jsonSuccess({ categories: [] });
     }
 
-    const typedCategories = categories as IncomeCategoryRow[];
+    const hiddenIds = await fetchHiddenDefaultCategoryIds(supabase, user.id, "income");
+    const typedCategories = (categories as IncomeCategoryRow[]).filter(
+      (c) => !hiddenIds.has(c.id),
+    );
 
     // Add isDefault flag to each category
     const categoriesWithFlags = typedCategories.map((cat) => ({
@@ -99,6 +103,7 @@ export async function POST(req: NextRequest) {
       .insert({
         user_id: user.id,
         name: validatedData.name.trim(),
+        icon: validatedData.icon ?? null,
       })
       .select()
       .single();

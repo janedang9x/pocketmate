@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import type { AccountWithBalance } from "@/types/account.types";
 import type { ExpenseCategoryWithChildren, IncomeCategory } from "@/types/category.types";
 import type { Counterparty } from "@/types/counterparty.types";
 import type { CreateTransactionInput } from "@/lib/schemas/transaction.schema";
+import type { TransactionRowWithCategoryNames } from "@/types/transaction.types";
 
 type AccountsResponse =
   | {
@@ -78,6 +80,19 @@ type CreateTransactionResponse =
       code: string;
     };
 
+type TransactionsResponse =
+  | {
+      success: true;
+      data: {
+        transactions: TransactionRowWithCategoryNames[];
+      };
+    }
+  | {
+      success: false;
+      error: string;
+      code: string;
+    };
+
 /**
  * Create Transaction Page
  * Implements Sprint 3.4: Transaction UI - Create Flows
@@ -87,6 +102,8 @@ type CreateTransactionResponse =
 export default function NewTransactionPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { messages: m } = useLocaleContext();
+  const t = m.transactions;
 
   const {
     data: accountsData,
@@ -104,7 +121,7 @@ export default function NewTransactionPage() {
 
       if (!res.ok) {
         const errorData = (await res.json().catch(() => null)) as AccountsResponse | null;
-        throw new Error(errorData?.success === false ? errorData.error : "Failed to fetch accounts");
+        throw new Error(errorData?.success === false ? errorData.error : m.common.failedToLoad);
       }
 
       return (await res.json()) as AccountsResponse;
@@ -127,9 +144,7 @@ export default function NewTransactionPage() {
 
       if (!res.ok) {
         const errorData = (await res.json().catch(() => null)) as ExpenseCategoriesResponse | null;
-        throw new Error(
-          errorData?.success === false ? errorData.error : "Failed to fetch expense categories",
-        );
+        throw new Error(errorData?.success === false ? errorData.error : m.common.failedToLoad);
       }
 
       return (await res.json()) as ExpenseCategoriesResponse;
@@ -152,9 +167,7 @@ export default function NewTransactionPage() {
 
       if (!res.ok) {
         const errorData = (await res.json().catch(() => null)) as IncomeCategoriesResponse | null;
-        throw new Error(
-          errorData?.success === false ? errorData.error : "Failed to fetch income categories",
-        );
+        throw new Error(errorData?.success === false ? errorData.error : m.common.failedToLoad);
       }
 
       return (await res.json()) as IncomeCategoriesResponse;
@@ -177,12 +190,48 @@ export default function NewTransactionPage() {
 
       if (!res.ok) {
         const errorData = (await res.json().catch(() => null)) as CounterpartiesResponse | null;
-        throw new Error(
-          errorData?.success === false ? errorData.error : "Failed to fetch counterparties",
-        );
+        throw new Error(errorData?.success === false ? errorData.error : m.common.failedToLoad);
       }
 
       return (await res.json()) as CounterpartiesResponse;
+    },
+  });
+
+  const { data: latestTransactionsData } = useQuery<TransactionsResponse>({
+    queryKey: ["transactions", "latest-account"],
+    queryFn: async () => {
+      const token = localStorage.getItem("pm_token");
+      const res = await fetch("/api/transactions?page=1&limit=1", {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = (await res.json().catch(() => null)) as TransactionsResponse | null;
+        throw new Error(errorData?.success === false ? errorData.error : m.common.failedToLoad);
+      }
+
+      return (await res.json()) as TransactionsResponse;
+    },
+  });
+
+  const { data: expenseUsageData } = useQuery<TransactionsResponse>({
+    queryKey: ["transactions", "expense-usage-categories"],
+    queryFn: async () => {
+      const token = localStorage.getItem("pm_token");
+      const res = await fetch("/api/transactions?type=Expense&page=1&limit=200", {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = (await res.json().catch(() => null)) as TransactionsResponse | null;
+        throw new Error(errorData?.success === false ? errorData.error : m.common.failedToLoad);
+      }
+
+      return (await res.json()) as TransactionsResponse;
     },
   });
 
@@ -207,11 +256,11 @@ export default function NewTransactionPage() {
       const result = (await res.json()) as CreateTransactionResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to create transaction");
+        throw new Error(result.success === false ? result.error : m.common.failedToLoad);
       }
 
       if (!result.success || !result.data?.transaction) {
-        throw new Error("Invalid response from server");
+        throw new Error(m.common.somethingWrong);
       }
 
       return result;
@@ -239,35 +288,44 @@ export default function NewTransactionPage() {
     incomeCategoriesData?.success === true ? incomeCategoriesData.data.categories : [];
   const counterparties =
     counterpartiesData?.success === true ? counterpartiesData.data.counterparties : [];
+  const latestTransaction =
+    latestTransactionsData?.success === true ? latestTransactionsData.data.transactions[0] : undefined;
+  const latestTransactionAccountId =
+    latestTransaction?.from_account_id ?? latestTransaction?.to_account_id ?? undefined;
+  const mostUsedExpenseCategoryIds = (() => {
+    if (expenseUsageData?.success !== true) return [];
+    const counts = new Map<string, number>();
+    for (const txn of expenseUsageData.data.transactions) {
+      const categoryId = txn.expense_category_id;
+      if (!categoryId) continue;
+      counts.set(categoryId, (counts.get(categoryId) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([categoryId]) => categoryId);
+  })();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard" aria-label="Back to dashboard">
+          <Link href="/dashboard" aria-label={t.backDashboardAria}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add Transaction</h1>
-          <p className="text-muted-foreground">
-            Record an expense, income, transfer, or borrow transaction.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{m.mainLayout.addTransaction}</h1>
+          <p className="text-muted-foreground">{t.newSubtitle}</p>
         </div>
       </div>
 
       <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Transaction Details</CardTitle>
-          <CardDescription>
-            Fill in the details for your new transaction. Balances will be updated automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {loadError && (
             <div className="mb-4 rounded-lg border border-destructive bg-destructive/10 p-4">
               <p className="text-sm font-medium text-destructive">
-                {loadError instanceof Error ? loadError.message : "Failed to load form data"}
+                {loadError instanceof Error ? loadError.message : t.loadFormError}
               </p>
             </div>
           )}
@@ -277,18 +335,18 @@ export default function NewTransactionPage() {
               <p className="text-sm font-medium text-destructive">
                 {createMutation.error instanceof Error
                   ? createMutation.error.message
-                  : "Something went wrong while creating the transaction"}
+                  : t.createError}
               </p>
             </div>
           )}
 
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading form data...</p>
+            <p className="text-sm text-muted-foreground">{t.loadingForm}</p>
           ) : accounts.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              You need at least one financial account to create transactions.{" "}
+              {t.needAccount}{" "}
               <Link href="/accounts/new" className="font-medium text-primary underline-offset-2 hover:underline">
-                Create an account first.
+                {t.createAccountFirst}
               </Link>
             </p>
           ) : (
@@ -297,6 +355,8 @@ export default function NewTransactionPage() {
               expenseCategories={expenseCategories}
               incomeCategories={incomeCategories}
               counterparties={counterparties}
+              latestTransactionAccountId={latestTransactionAccountId}
+              mostUsedExpenseCategoryIds={mostUsedExpenseCategoryIds}
               onSubmit={handleSubmit}
               isSubmitting={createMutation.isPending}
             />

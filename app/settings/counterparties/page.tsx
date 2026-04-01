@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,12 +28,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  createCounterpartySchema,
-  updateCounterpartySchema,
-  type CreateCounterpartyInput,
-  type UpdateCounterpartyInput,
-} from "@/lib/schemas/counterparty.schema";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { buildCounterpartySchemas } from "@/lib/i18n/zod/counterparty-schemas";
+import type { CreateCounterpartyInput, UpdateCounterpartyInput } from "@/lib/schemas/counterparty.schema";
 import type { CounterpartyWithTransactionCount } from "@/types/counterparty.types";
 
 type CounterpartiesResponse =
@@ -46,6 +43,9 @@ type CounterpartiesResponse =
  */
 export default function CounterpartiesPage() {
   const queryClient = useQueryClient();
+  const { messages: m } = useLocaleContext();
+  const sc = m.settings.counterparties;
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCounterparty, setEditingCounterparty] =
     useState<CounterpartyWithTransactionCount | null>(null);
@@ -63,7 +63,7 @@ export default function CounterpartiesPage() {
       if (!res.ok) {
         const errorData = (await res.json().catch(() => null)) as CounterpartiesResponse | null;
         throw new Error(
-          errorData?.success === false ? errorData.error : "Failed to fetch counterparties",
+          errorData?.success === false ? errorData.error : sc.fetchError,
         );
       }
 
@@ -88,7 +88,7 @@ export default function CounterpartiesPage() {
       const result = (await res.json()) as CounterpartiesResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to create counterparty");
+        throw new Error(result.success === false ? result.error : sc.createFailed);
       }
 
       return result;
@@ -120,7 +120,7 @@ export default function CounterpartiesPage() {
       const result = (await res.json()) as CounterpartiesResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to update counterparty");
+        throw new Error(result.success === false ? result.error : sc.updateFailed);
       }
 
       return result;
@@ -143,7 +143,7 @@ export default function CounterpartiesPage() {
       const result = (await res.json()) as CounterpartiesResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to delete counterparty");
+        throw new Error(result.success === false ? result.error : sc.deleteFailed);
       }
 
       return result;
@@ -158,11 +158,8 @@ export default function CounterpartiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Counterparty Management</h1>
-          <p className="text-muted-foreground">
-            Manage people and organizations you transact with (e.g., for borrow/lend or expense
-            tracking).
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{sc.title}</h1>
+          <p className="text-muted-foreground">{sc.subtitle}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -173,7 +170,7 @@ export default function CounterpartiesPage() {
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Counterparty
+              {sc.add}
             </Button>
           </DialogTrigger>
           <CounterpartyDialog
@@ -196,16 +193,13 @@ export default function CounterpartiesPage() {
 
       {isLoading && !data ? (
         <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading counterparties...</div>
+          <div className="text-muted-foreground">{sc.loading}</div>
         </div>
       ) : counterparties.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground mb-4">No counterparties yet.</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Add people or organizations you transact with (e.g., friends you borrow from, stores,
-              employers).
-            </p>
+            <p className="text-muted-foreground mb-4">{sc.empty}</p>
+            <p className="text-sm text-muted-foreground mb-4">{sc.emptyHint}</p>
             <Button
               onClick={() => {
                 setEditingCounterparty(null);
@@ -213,7 +207,7 @@ export default function CounterpartiesPage() {
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Counterparty
+              {sc.add}
             </Button>
           </CardContent>
         </Card>
@@ -247,7 +241,9 @@ export default function CounterpartiesPage() {
                 </div>
                 <CardDescription>
                   {counterparty.transaction_count}{" "}
-                  {counterparty.transaction_count === 1 ? "transaction" : "transactions"}
+                  {counterparty.transaction_count === 1
+                    ? m.common.transaction
+                    : m.common.transactions}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -256,7 +252,7 @@ export default function CounterpartiesPage() {
       )}
 
       {isFetching && data && (
-        <p className="text-sm text-muted-foreground">Refreshing counterparties...</p>
+        <p className="text-sm text-muted-foreground">{sc.refreshing}</p>
       )}
 
       <AlertDialog
@@ -265,21 +261,23 @@ export default function CounterpartiesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Counterparty</AlertDialogTitle>
+            <AlertDialogTitle>{sc.deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deletingCounterparty?.name}&quot;? This action
-              cannot be undone.
+              {sc.deleteConfirm.replace("{name}", deletingCounterparty?.name ?? "")}
               {deletingCounterparty?.transaction_count &&
                 deletingCounterparty.transaction_count > 0 && (
                   <span className="mt-2 block text-destructive">
-                    This counterparty has {deletingCounterparty.transaction_count} transaction(s).
-                    You must remove or reassign those transactions before deleting.
+                    {sc.hasTransactionsNote.replace(
+                      "{n}",
+                      String(deletingCounterparty.transaction_count),
+                    )}{" "}
+                    {sc.deleteBlockedNote}
                   </span>
                 )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{m.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingCounterparty) {
@@ -292,7 +290,7 @@ export default function CounterpartiesPage() {
               }
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {m.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -312,10 +310,13 @@ function CounterpartyDialog({
   isLoading: boolean;
   onClose: () => void;
 }) {
+  const { messages: m } = useLocaleContext();
+  const sc = m.settings.counterparties;
+  const schemas = useMemo(() => buildCounterpartySchemas(m), [m]);
   const isEdit = counterparty !== null;
 
   const form = useForm<CreateCounterpartyInput | UpdateCounterpartyInput>({
-    resolver: zodResolver(isEdit ? updateCounterpartySchema : createCounterpartySchema),
+    resolver: zodResolver(isEdit ? schemas.update : schemas.create),
     defaultValues: isEdit ? { name: counterparty.name } : { name: "" },
   });
 
@@ -323,7 +324,7 @@ function CounterpartyDialog({
     try {
       await onSubmit(values);
       form.reset();
-    } catch (error) {
+    } catch {
       // Error surfaced via mutation
     }
   }
@@ -331,19 +332,17 @@ function CounterpartyDialog({
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{isEdit ? "Edit Counterparty" : "Add Counterparty"}</DialogTitle>
+        <DialogTitle>{isEdit ? sc.dialogEdit : sc.dialogAdd}</DialogTitle>
         <DialogDescription>
-          {isEdit
-            ? "Update the counterparty name."
-            : "Add a person or organization you transact with (e.g., friend, store, employer)."}
+          {isEdit ? sc.dialogEditDesc : sc.dialogCreateDesc}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name">{sc.nameLabel}</Label>
           <Input
             id="name"
-            placeholder="e.g. John Doe, ABC Store"
+            placeholder={sc.namePlaceholder}
             {...form.register("name")}
           />
           {form.formState.errors.name?.message && (
@@ -353,10 +352,14 @@ function CounterpartyDialog({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
+            {m.common.cancel}
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : isEdit ? "Save Changes" : "Add Counterparty"}
+            {isLoading
+              ? m.common.saving
+              : isEdit
+                ? sc.saveEdit
+                : sc.saveAdd}
           </Button>
         </DialogFooter>
       </form>

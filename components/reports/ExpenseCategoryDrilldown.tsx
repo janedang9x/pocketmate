@@ -13,6 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { chartColorAt } from "@/components/charts/chartColors";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import {
+  displayExpenseReportCategoryName,
+  displayExpenseReportSubcategoryName,
+} from "@/lib/i18n/category-display-name";
 import type { ExpenseReportCategoryRow } from "@/types/report.types";
 
 const UNCATEGORIZED_ID = "__uncategorized__";
@@ -34,19 +39,23 @@ export function ExpenseCategoryDrilldown({
   formatAmount,
   className,
 }: ExpenseCategoryDrilldownProps) {
+  const { messages: m, locale } = useLocaleContext();
+  const r = m.reports;
   const [openId, setOpenId] = useState<string | null>(null);
+
+  function txnLabel(count: number) {
+    return `${count} ${count === 1 ? m.common.transaction : m.common.transactions}`;
+  }
 
   return (
     <Card className={cn(className)}>
       <CardHeader>
-        <CardTitle className="text-lg">By category</CardTitle>
-        <CardDescription>
-          Grouped by parent category. Expand to see subcategories and open the transaction list.
-        </CardDescription>
+        <CardTitle className="text-lg">{r.byCategoryTitle}</CardTitle>
+        <CardDescription>{r.byCategoryDesc}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         {categories.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No categories in range</p>
+          <p className="text-sm text-muted-foreground">{r.noCategoriesInRange}</p>
         ) : (
           categories.map((row, index) => {
             const hasChildren = row.subcategories.length > 0;
@@ -81,15 +90,15 @@ export function ExpenseCategoryDrilldown({
                   )}
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="font-medium">{row.categoryName}</span>
+                      <span className="font-medium">
+                        {displayExpenseReportCategoryName(row, locale, m)}
+                      </span>
                       <span className="shrink-0 tabular-nums text-sm text-muted-foreground">
                         {formatAmount(row.amount)}
                         <span className="ml-2 text-xs">({row.percentage.toFixed(1)}%)</span>
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {row.transactionCount} transaction{row.transactionCount === 1 ? "" : "s"}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{txnLabel(row.transactionCount)}</p>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full"
@@ -105,7 +114,7 @@ export function ExpenseCategoryDrilldown({
                         className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                       >
                         <ExternalLink className="h-3 w-3" aria-hidden />
-                        View transactions
+                        {r.viewTransactions}
                       </Link>
                     ) : null}
                   </div>
@@ -116,24 +125,23 @@ export function ExpenseCategoryDrilldown({
                     {row.subcategories.map((sub) => (
                       <li key={sub.categoryId} className="text-sm">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <span className="text-foreground">{sub.categoryName}</span>
+                          <span className="text-foreground">
+                            {displayExpenseReportSubcategoryName(sub, locale, m)}
+                          </span>
                           <span className="tabular-nums text-muted-foreground">
                             {formatAmount(sub.amount)}
                             <span className="ml-2 text-xs">
-                              ({sub.percentage.toFixed(1)}% of parent)
+                              ({sub.percentage.toFixed(1)}% {r.percentOfParent})
                             </span>
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {sub.transactionCount} transaction
-                          {sub.transactionCount === 1 ? "" : "s"}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{txnLabel(sub.transactionCount)}</p>
                         <Link
                           href={buildTransactionHref(sub.categoryId)}
                           className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                         >
                           <ExternalLink className="h-3 w-3" aria-hidden />
-                          View transactions
+                          {r.viewTransactions}
                         </Link>
                       </li>
                     ))}

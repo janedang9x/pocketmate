@@ -20,6 +20,8 @@ import type { AccountWithBalance } from "@/types/account.types";
 import type { Currency } from "@/types/account.types";
 import type { ExpenseCategoryWithChildren, IncomeCategory } from "@/types/category.types";
 import type { Counterparty } from "@/types/counterparty.types";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { formatExpenseCategoryBreadcrumb, incomeCategoryDisplayName } from "@/lib/i18n/category-display-name";
 import { getCurrencyLabel } from "@/lib/utils/account.utils";
 
 type TransactionDetailResponse =
@@ -72,6 +74,7 @@ export default function TransactionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { locale } = useLocaleContext();
   const id = params.id as string;
 
   const {
@@ -225,18 +228,21 @@ export default function TransactionDetailPage() {
     const map = new Map<string, string>();
 
     expenseCategories.forEach((parent) => {
-      map.set(parent.id, parent.name);
+      map.set(
+        parent.id,
+        formatExpenseCategoryBreadcrumb(parent, null, locale),
+      );
       parent.children?.forEach((child) => {
-        map.set(child.id, `${parent.name} › ${child.name}`);
+        map.set(child.id, formatExpenseCategoryBreadcrumb(parent, child, locale));
       });
     });
 
     incomeCategories.forEach((cat) => {
-      map.set(cat.id, cat.name);
+      map.set(cat.id, incomeCategoryDisplayName(cat, locale));
     });
 
     return map;
-  }, [expenseCategories, incomeCategories]);
+  }, [expenseCategories, incomeCategories, locale]);
 
   const accountById = useMemo(() => {
     const map = new Map<string, AccountWithBalance>();

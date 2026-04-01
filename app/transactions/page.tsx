@@ -18,6 +18,9 @@ import type { AccountWithBalance } from "@/types/account.types";
 import type { ExpenseCategoryWithChildren, IncomeCategory } from "@/types/category.types";
 import type { Counterparty } from "@/types/counterparty.types";
 import { TRANSACTION_TYPES, type TransactionRow } from "@/types/transaction.types";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { formatExpenseCategoryBreadcrumb, incomeCategoryDisplayName } from "@/lib/i18n/category-display-name";
+import { transactionTypeLabel } from "@/lib/i18n/labels";
 
 type TransactionsResponse =
   | {
@@ -99,7 +102,18 @@ type SortDirection = "asc" | "desc";
  * Implements FR-TXN-005: View Transactions
  * @see docs/specifications.md#fr-txn-005-view-transactions
  */
+function TransactionsLoadingFallback() {
+  const { messages: m } = useLocaleContext();
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+      {m.transactions.loading}
+    </div>
+  );
+}
+
 function TransactionsPageInner() {
+  const { messages: m, locale } = useLocaleContext();
+  const t = m.transactions;
   const searchParams = useSearchParams();
   const hydratedFromUrl = useRef(false);
 
@@ -319,18 +333,21 @@ function TransactionsPageInner() {
     const map = new Map<string, string>();
 
     expenseCategories.forEach((parent) => {
-      map.set(parent.id, parent.name);
+      map.set(
+        parent.id,
+        formatExpenseCategoryBreadcrumb(parent, null, locale),
+      );
       parent.children?.forEach((child) => {
-        map.set(child.id, `${parent.name} › ${child.name}`);
+        map.set(child.id, formatExpenseCategoryBreadcrumb(parent, child, locale));
       });
     });
 
     incomeCategories.forEach((cat) => {
-      map.set(cat.id, cat.name);
+      map.set(cat.id, incomeCategoryDisplayName(cat, locale));
     });
 
     return map;
-  }, [expenseCategories, incomeCategories]);
+  }, [expenseCategories, incomeCategories, locale]);
 
   const accountNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -404,21 +421,24 @@ function TransactionsPageInner() {
     const items: { id: string; label: string }[] = [];
 
     expenseCategories.forEach((parent) => {
-      items.push({ id: parent.id, label: parent.name });
+      items.push({
+        id: parent.id,
+        label: formatExpenseCategoryBreadcrumb(parent, null, locale),
+      });
       parent.children?.forEach((child) => {
         items.push({
           id: child.id,
-          label: `${parent.name} › ${child.name}`,
+          label: formatExpenseCategoryBreadcrumb(parent, child, locale),
         });
       });
     });
 
     incomeCategories.forEach((cat) => {
-      items.push({ id: cat.id, label: cat.name });
+      items.push({ id: cat.id, label: incomeCategoryDisplayName(cat, locale) });
     });
 
     return items;
-  }, [expenseCategories, incomeCategories]);
+  }, [expenseCategories, incomeCategories, locale]);
 
   function resetFilters() {
     setSearchQuery("");
@@ -434,15 +454,13 @@ function TransactionsPageInner() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
-          <p className="text-muted-foreground">
-            Browse and filter your full transaction history.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t.pageTitle}</h1>
+          <p className="text-muted-foreground">{t.pageSubtitle}</p>
         </div>
         <Button asChild>
           <Link href="/transactions/new">
             <Plus className="mr-2 h-4 w-4" />
-            Add Transaction
+            {m.mainLayout.addTransaction}
           </Link>
         </Button>
       </div>
@@ -452,7 +470,7 @@ function TransactionsPageInner() {
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by notes or description..."
+              placeholder={t.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -474,7 +492,7 @@ function TransactionsPageInner() {
             }}
             className="h-9 w-full text-xs"
           />
-          <span className="px-1 text-xs text-muted-foreground">to</span>
+          <span className="px-1 text-xs text-muted-foreground">{m.common.to}</span>
           <Input
             type="date"
             value={endDate}
@@ -496,13 +514,13 @@ function TransactionsPageInner() {
           >
             <SelectTrigger className="h-9 w-full sm:w-[140px]">
               <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t.typePlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
+              <SelectItem value="all">{t.allTypes}</SelectItem>
               {TRANSACTION_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
-                  {type}
+                  {transactionTypeLabel(type, m.transactionTypes)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -516,10 +534,10 @@ function TransactionsPageInner() {
             }}
           >
             <SelectTrigger className="h-9 w-full sm:w-[150px]">
-              <SelectValue placeholder="Account" />
+              <SelectValue placeholder={t.accountPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All accounts</SelectItem>
+              <SelectItem value="all">{t.allAccounts}</SelectItem>
               {accounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.name}
@@ -538,10 +556,10 @@ function TransactionsPageInner() {
             }}
           >
             <SelectTrigger className="h-9 w-full sm:w-[220px]">
-              <SelectValue placeholder="Category" />
+              <SelectValue placeholder={t.categoryPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t.allCategories}</SelectItem>
               {uniqueCategoriesForFilter.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.label}
@@ -557,7 +575,7 @@ function TransactionsPageInner() {
               size="sm"
               onClick={resetFilters}
             >
-              Clear filters
+              {m.common.clearFilters}
             </Button>
           </div>
         </div>
@@ -565,18 +583,18 @@ function TransactionsPageInner() {
 
       {isLoading && !transactionsData && (
         <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading transactions...</p>
+          <p className="text-muted-foreground">{t.loading}</p>
         </div>
       )}
 
       {isRefreshing && !combinedError && (
-        <p className="text-sm text-muted-foreground">Refreshing transactions...</p>
+        <p className="text-sm text-muted-foreground">{t.refreshing}</p>
       )}
 
       {combinedError && (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
           <p className="text-sm font-medium text-destructive">
-            {combinedError instanceof Error ? combinedError.message : "Failed to load data"}
+            {combinedError instanceof Error ? combinedError.message : m.common.failedToLoad}
           </p>
         </div>
       )}
@@ -585,7 +603,7 @@ function TransactionsPageInner() {
         <>
           {sortedTransactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12">
-              <p className="mb-2 text-lg font-medium">No transactions found</p>
+              <p className="mb-2 text-lg font-medium">{t.emptyTitle}</p>
               <p className="mb-4 text-sm text-muted-foreground">
                 {searchQuery ||
                 typeFilter !== "all" ||
@@ -593,8 +611,8 @@ function TransactionsPageInner() {
                 categoryFilter !== "all" ||
                 startDate ||
                 endDate
-                  ? "Try adjusting your filters"
-                  : "Start by recording your first transaction."}
+                  ? t.emptyFiltered
+                  : t.emptyNew}
               </p>
               {!searchQuery &&
                 typeFilter === "all" &&
@@ -605,7 +623,7 @@ function TransactionsPageInner() {
                   <Button asChild>
                     <Link href="/transactions/new">
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Transaction
+                      {m.mainLayout.addTransaction}
                     </Link>
                   </Button>
                 )}
@@ -615,25 +633,27 @@ function TransactionsPageInner() {
               <div className="space-y-3 md:hidden">
                 {sortedTransactions.map((txn) => {
                   const categoryId = txn.expense_category_id ?? txn.income_category_id ?? undefined;
-                  const categoryLabel = categoryId ? categoryNameById.get(categoryId) ?? "-" : "-";
+                  const categoryLabel = categoryId
+                    ? categoryNameById.get(categoryId) ?? m.common.na
+                    : m.common.na;
 
-                  let accountLabel = "-";
+                  let accountLabel = m.common.na;
                   if (txn.type === "Expense" && txn.from_account_id) {
-                    accountLabel = accountNameById.get(txn.from_account_id) ?? "-";
+                    accountLabel = accountNameById.get(txn.from_account_id) ?? m.common.na;
                   } else if (txn.type === "Income" && txn.to_account_id) {
-                    accountLabel = accountNameById.get(txn.to_account_id) ?? "-";
+                    accountLabel = accountNameById.get(txn.to_account_id) ?? m.common.na;
                   } else if (txn.type === "Transfer") {
                     const fromName = txn.from_account_id
                       ? accountNameById.get(txn.from_account_id) ?? ""
                       : "";
                     const toName = txn.to_account_id ? accountNameById.get(txn.to_account_id) ?? "" : "";
-                    accountLabel = [fromName, toName].filter(Boolean).join(" → ") || "-";
+                    accountLabel = [fromName, toName].filter(Boolean).join(" → ") || m.common.na;
                   } else if (txn.type === "Borrow") {
                     const fromName = txn.from_account_id
                       ? accountNameById.get(txn.from_account_id) ?? ""
                       : "";
                     const toName = txn.to_account_id ? accountNameById.get(txn.to_account_id) ?? "" : "";
-                    accountLabel = [fromName, toName].filter(Boolean).join(" ↔ ") || "-";
+                    accountLabel = [fromName, toName].filter(Boolean).join(" ↔ ") || m.common.na;
                   }
 
                   const counterpartyLabel = txn.counterparty_id
@@ -660,7 +680,9 @@ function TransactionsPageInner() {
                           >
                             {formattedDate}
                           </Link>
-                          <p className="mt-1 text-sm font-medium">{txn.type}</p>
+                          <p className="mt-1 text-sm font-medium">
+                            {transactionTypeLabel(txn.type, m.transactionTypes)}
+                          </p>
                         </div>
                         <span className={`text-sm font-semibold ${amountClassName}`}>
                           {amountSign}
@@ -673,19 +695,21 @@ function TransactionsPageInner() {
                       </div>
                       <div className="mt-2 space-y-1 text-xs">
                         <p>
-                          <span className="text-muted-foreground">Category: </span>
+                          <span className="text-muted-foreground">{t.mobileCategory}</span>
                           {categoryLabel}
                         </p>
                         <p>
-                          <span className="text-muted-foreground">Account: </span>
+                          <span className="text-muted-foreground">{t.mobileAccount}</span>
                           {accountLabel}
                           {counterpartyLabel ? ` · ${counterpartyLabel}` : ""}
                         </p>
                         <p>
-                          <span className="text-muted-foreground">Balance after: </span>
-                          N/A
+                          <span className="text-muted-foreground">{t.mobileBalanceAfter}</span>
+                          {m.common.na}
                         </p>
-                        <p className="line-clamp-2 text-muted-foreground">{txn.details || "-"}</p>
+                        <p className="line-clamp-2 text-muted-foreground">
+                          {txn.details || m.common.na}
+                        </p>
                       </div>
                     </div>
                   );
@@ -702,7 +726,7 @@ function TransactionsPageInner() {
                           className="inline-flex items-center gap-1"
                           onClick={() => toggleSort("date_time")}
                         >
-                          Date
+                          {t.tableDate}
                           <ArrowUpDown className="h-3 w-3" />
                         </button>
                       </th>
@@ -712,7 +736,7 @@ function TransactionsPageInner() {
                           className="inline-flex items-center gap-1"
                           onClick={() => toggleSort("type")}
                         >
-                          Type
+                          {t.tableType}
                           <ArrowUpDown className="h-3 w-3" />
                         </button>
                       </th>
@@ -722,12 +746,12 @@ function TransactionsPageInner() {
                           className="inline-flex items-center gap-1"
                           onClick={() => toggleSort("category")}
                         >
-                          Category
+                          {t.tableCategory}
                           <ArrowUpDown className="h-3 w-3" />
                         </button>
                       </th>
                       <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
-                        Account
+                        {t.tableAccount}
                       </th>
                       <th className="whitespace-nowrap px-3 py-2 text-right font-medium text-muted-foreground">
                         <button
@@ -735,40 +759,42 @@ function TransactionsPageInner() {
                           className="inline-flex items-center gap-1"
                           onClick={() => toggleSort("amount")}
                         >
-                          Amount
+                          {t.tableAmount}
                           <ArrowUpDown className="h-3 w-3" />
                         </button>
                       </th>
                       <th className="whitespace-nowrap px-3 py-2 text-right font-medium text-muted-foreground">
-                        Balance after
+                        {t.tableBalance}
                       </th>
                       <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground">
-                        Notes
+                        {t.tableNotes}
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {sortedTransactions.map((txn) => {
                       const categoryId = txn.expense_category_id ?? txn.income_category_id ?? undefined;
-                      const categoryLabel = categoryId ? categoryNameById.get(categoryId) ?? "-" : "-";
+                      const categoryLabel = categoryId
+                        ? categoryNameById.get(categoryId) ?? m.common.na
+                        : m.common.na;
 
-                      let accountLabel = "-";
+                      let accountLabel = m.common.na;
                       if (txn.type === "Expense" && txn.from_account_id) {
-                        accountLabel = accountNameById.get(txn.from_account_id) ?? "-";
+                        accountLabel = accountNameById.get(txn.from_account_id) ?? m.common.na;
                       } else if (txn.type === "Income" && txn.to_account_id) {
-                        accountLabel = accountNameById.get(txn.to_account_id) ?? "-";
+                        accountLabel = accountNameById.get(txn.to_account_id) ?? m.common.na;
                       } else if (txn.type === "Transfer") {
                         const fromName = txn.from_account_id
                           ? accountNameById.get(txn.from_account_id) ?? ""
                           : "";
                         const toName = txn.to_account_id ? accountNameById.get(txn.to_account_id) ?? "" : "";
-                        accountLabel = [fromName, toName].filter(Boolean).join(" → ") || "-";
+                        accountLabel = [fromName, toName].filter(Boolean).join(" → ") || m.common.na;
                       } else if (txn.type === "Borrow") {
                         const fromName = txn.from_account_id
                           ? accountNameById.get(txn.from_account_id) ?? ""
                           : "";
                         const toName = txn.to_account_id ? accountNameById.get(txn.to_account_id) ?? "" : "";
-                        accountLabel = [fromName, toName].filter(Boolean).join(" ↔ ") || "-";
+                        accountLabel = [fromName, toName].filter(Boolean).join(" ↔ ") || m.common.na;
                       }
 
                       const counterpartyLabel = txn.counterparty_id
@@ -794,7 +820,9 @@ function TransactionsPageInner() {
                               {formattedDate}
                             </Link>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2 text-xs font-medium">{txn.type}</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-xs font-medium">
+                            {transactionTypeLabel(txn.type, m.transactionTypes)}
+                          </td>
                           <td className="whitespace-nowrap px-3 py-2 text-xs">{categoryLabel}</td>
                           <td className="whitespace-nowrap px-3 py-2 text-xs">
                             {accountLabel}
@@ -816,10 +844,10 @@ function TransactionsPageInner() {
                           </td>
                           <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-muted-foreground">
                             {/* Balance-after per transaction will be provided by reporting layer in Sprint 4. */}
-                            N/A
+                            {m.common.na}
                           </td>
                           <td className="max-w-[180px] px-3 py-2 text-xs text-muted-foreground">
-                            <span className="line-clamp-1">{txn.details || "-"}</span>
+                            <span className="line-clamp-1">{txn.details || m.common.na}</span>
                           </td>
                         </tr>
                       );
@@ -833,8 +861,9 @@ function TransactionsPageInner() {
           {pagination && pagination.totalPages > 1 && (
             <div className="flex flex-col gap-2 pt-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <div>
-                Page {pagination.page} of {pagination.totalPages} ·{" "}
-                {pagination.total} transaction{pagination.total === 1 ? "" : "s"}
+                {m.common.pageWord} {pagination.page} {m.common.ofWord} {pagination.totalPages} ·{" "}
+                {pagination.total}{" "}
+                {pagination.total === 1 ? m.common.transaction : m.common.transactions}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -844,7 +873,7 @@ function TransactionsPageInner() {
                   disabled={pagination.page <= 1}
                   onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                 >
-                  Previous
+                  {m.common.previous}
                 </Button>
                 <Button
                   type="button"
@@ -857,7 +886,7 @@ function TransactionsPageInner() {
                     )
                   }
                 >
-                  Next
+                  {m.common.next}
                 </Button>
               </div>
             </div>
@@ -870,13 +899,7 @@ function TransactionsPageInner() {
 
 export default function TransactionsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
-          Loading transactions…
-        </div>
-      }
-    >
+    <Suspense fallback={<TransactionsLoadingFallback />}>
       <TransactionsPageInner />
     </Suspense>
   );

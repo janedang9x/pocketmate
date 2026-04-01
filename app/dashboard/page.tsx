@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { endOfMonth, format, parseISO, startOfMonth } from "date-fns";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { getDateFnsLocale } from "@/lib/i18n/date-locale";
+import { transactionTypeLabel } from "@/lib/i18n/labels";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +27,7 @@ import {
 } from "@/lib/utils/account.utils";
 import type { AccountWithBalance, Currency } from "@/types/account.types";
 import type { ComparisonReportData, ExpenseReportData } from "@/types/report.types";
-import type { TransactionRow } from "@/types/transaction.types";
+import type { TransactionRow, TransactionRowWithCategoryNames } from "@/types/transaction.types";
 import { convertAmountToVnd, type VndExchangeRates } from "@/lib/utils/exchange-rate.utils";
 
 type ApiError = { success: false; error: string; code: string };
@@ -45,7 +48,7 @@ type TransactionsResponse =
   | {
       success: true;
       data: {
-        transactions: TransactionRow[];
+        transactions: TransactionRowWithCategoryNames[];
       };
     }
   | ApiError;
@@ -55,7 +58,7 @@ interface DashboardData {
   exchangeRates: VndExchangeRates | null;
   monthlyComparison: ComparisonReportData | null;
   monthlyExpense: ExpenseReportData | null;
-  recentTransactions: TransactionRow[];
+  recentTransactions: TransactionRowWithCategoryNames[];
   startDate: string;
   endDate: string;
 }
@@ -67,6 +70,10 @@ interface DashboardData {
  * Implements Sprint 4.7: Dashboard Finalization
  */
 export default function DashboardPage() {
+  const { messages: m, locale } = useLocaleContext();
+  const d = m.dashboard;
+  const df = getDateFnsLocale(locale);
+
   const { data, isLoading, error } = useQuery<DashboardData>({
     queryKey: ["dashboard-data"],
     queryFn: async () => {
@@ -106,7 +113,7 @@ export default function DashboardPage() {
       const transactionsJson = (await transactionsRes.json()) as TransactionsResponse;
 
       if (!accountsRes.ok || accountsJson.success === false) {
-        throw new Error(accountsJson.success === false ? accountsJson.error : "Failed to fetch accounts");
+        throw new Error(accountsJson.success === false ? accountsJson.error : d.failedAccounts);
       }
 
       return {
@@ -162,6 +169,16 @@ export default function DashboardPage() {
     return formatCurrency(transaction.amount, transaction.currency as Currency);
   }
 
+  function getTransactionSecondaryLabel(transaction: TransactionRowWithCategoryNames): string {
+    const details = transaction.details?.trim();
+    if (details) return details;
+    const expenseName = transaction.expense_category_name?.trim();
+    if (expenseName) return expenseName;
+    const incomeName = transaction.income_category_name?.trim();
+    if (incomeName) return incomeName;
+    return d.noDetails;
+  }
+
   function getTransactionAccountLabel(transaction: TransactionRow): string {
     if (transaction.type === "Expense" || transaction.type === "Borrow") {
       const fromName = transaction.from_account_id
@@ -170,11 +187,13 @@ export default function DashboardPage() {
       const toName = transaction.to_account_id ? accountNameById.get(transaction.to_account_id) : null;
       if (fromName) return fromName;
       if (toName) return toName;
-      return "N/A";
+      return m.common.na;
     }
 
     if (transaction.type === "Income") {
-      return transaction.to_account_id ? accountNameById.get(transaction.to_account_id) ?? "N/A" : "N/A";
+      return transaction.to_account_id
+        ? accountNameById.get(transaction.to_account_id) ?? m.common.na
+        : m.common.na;
     }
 
     const fromName = transaction.from_account_id
@@ -182,24 +201,22 @@ export default function DashboardPage() {
       : null;
     const toName = transaction.to_account_id ? accountNameById.get(transaction.to_account_id) : null;
     if (fromName && toName) return `${fromName} -> ${toName}`;
-    return fromName ?? toName ?? "N/A";
+    return fromName ?? toName ?? m.common.na;
   }
 
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Overview of your financial accounts and recent activity
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{d.title}</h1>
+        <p className="text-muted-foreground mt-1">{d.subtitle}</p>
       </div>
 
       {/* Summary Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Balance</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{d.totalBalance}</CardTitle>
             <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
               <Wallet className="h-5 w-5 text-white" />
             </div>
@@ -208,7 +225,7 @@ export default function DashboardPage() {
             {isLoading ? (
               <div className="text-3xl font-bold">--</div>
             ) : error ? (
-              <div className="text-3xl font-bold text-destructive">Error</div>
+              <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
             ) : accounts.length === 0 ? (
               <div className="text-3xl font-bold">0 VND</div>
             ) : (
@@ -218,20 +235,20 @@ export default function DashboardPage() {
                 </div>
                 {balancesByCurrency.size > 1 && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Multi-currency: {Array.from(balancesByCurrency.entries())
+                    {m.common.multiCurrency}: {Array.from(balancesByCurrency.entries())
                       .map(([curr, bal]) => formatCurrency(bal, curr))
                       .join(", ")}
                   </p>
                 )}
               </>
             )}
-            <p className="text-xs text-muted-foreground mt-2">Across all accounts</p>
+            <p className="text-xs text-muted-foreground mt-2">{d.acrossAccounts}</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Income</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{d.monthlyIncome}</CardTitle>
             <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
               <TrendingUp className="h-5 w-5 text-white" />
             </div>
@@ -240,21 +257,21 @@ export default function DashboardPage() {
             {isLoading ? (
               <div className="text-3xl font-bold">--</div>
             ) : error ? (
-              <div className="text-3xl font-bold text-destructive">Error</div>
+              <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
             ) : (
               <div className="text-3xl font-bold text-blue-600">
                 {formatCurrency(monthlyIncome, "VND")}
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-2">
-              {data ? `${data.startDate} to ${data.endDate}` : "This month"}
+              {data ? `${data.startDate} ${m.common.to} ${data.endDate}` : d.thisMonth}
             </p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Expense</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{d.monthlyExpense}</CardTitle>
             <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
               <TrendingDown className="h-5 w-5 text-white" />
             </div>
@@ -263,21 +280,21 @@ export default function DashboardPage() {
             {isLoading ? (
               <div className="text-3xl font-bold">--</div>
             ) : error ? (
-              <div className="text-3xl font-bold text-destructive">Error</div>
+              <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
             ) : (
               <div className="text-3xl font-bold text-orange-600">
                 {formatCurrency(monthlyExpense, "VND")}
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-2">
-              {data ? `${data.startDate} to ${data.endDate}` : "This month"}
+              {data ? `${data.startDate} ${m.common.to} ${data.endDate}` : d.thisMonth}
             </p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Net Savings</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{d.netSavings}</CardTitle>
             <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center">
               <PiggyBank className="h-5 w-5 text-white" />
             </div>
@@ -286,7 +303,7 @@ export default function DashboardPage() {
             {isLoading ? (
               <div className="text-3xl font-bold">--</div>
             ) : error ? (
-              <div className="text-3xl font-bold text-destructive">Error</div>
+              <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
             ) : (
               <div
                 className={`text-3xl font-bold ${
@@ -296,14 +313,14 @@ export default function DashboardPage() {
                 {formatCurrency(monthlyNetSavings, "VND")}
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-2">Income - expense (this month)</p>
+            <p className="text-xs text-muted-foreground mt-2">{d.incomeMinusExpense}</p>
           </CardContent>
         </Card>
       </div>
 
       <CategoryBreakdown
-        title="Top expense categories"
-        description="Highest spending categories this month"
+        title={d.topExpenseTitle}
+        description={d.topExpenseDesc}
         items={topCategoryItems}
         formatAmount={(value) => formatCurrency(value, "VND")}
         listMaxHeight="220px"
@@ -314,12 +331,12 @@ export default function DashboardPage() {
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div>
-              <CardTitle className="text-xl font-semibold">Your Accounts</CardTitle>
-              <CardDescription className="mt-1">Top accounts by balance</CardDescription>
+              <CardTitle className="text-xl font-semibold">{d.yourAccounts}</CardTitle>
+              <CardDescription className="mt-1">{d.yourAccountsDesc}</CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild className="gap-2">
               <Link href="/accounts">
-                View All <ArrowRight className="h-4 w-4" />
+                {d.viewAll} <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
           </CardHeader>
@@ -336,33 +353,33 @@ export default function DashboardPage() {
       {/* Reports quick links */}
       <Card className="shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold">Reports</CardTitle>
-          <CardDescription className="mt-1">Jump directly to analytics pages</CardDescription>
+          <CardTitle className="text-xl font-semibold">{d.reportsTitle}</CardTitle>
+          <CardDescription className="mt-1">{d.reportsDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Button variant="outline" className="justify-start gap-2" asChild>
               <Link href="/reports/expense">
                 <TrendingDown className="h-4 w-4" />
-                Expense report
+                {d.reportExpense}
               </Link>
             </Button>
             <Button variant="outline" className="justify-start gap-2" asChild>
               <Link href="/reports/income">
                 <TrendingUp className="h-4 w-4" />
-                Income report
+                {d.reportIncome}
               </Link>
             </Button>
             <Button variant="outline" className="justify-start gap-2" asChild>
               <Link href="/reports/comparison">
                 <LineChart className="h-4 w-4" />
-                Comparison report
+                {d.reportComparison}
               </Link>
             </Button>
             <Button variant="outline" className="justify-start gap-2" asChild>
               <Link href="/reports/statement">
                 <FileText className="h-4 w-4" />
-                Financial statement
+                {d.reportStatement}
               </Link>
             </Button>
           </div>
@@ -372,8 +389,8 @@ export default function DashboardPage() {
       {/* Recent Transactions */}
       <Card className="shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold">Recent Transactions</CardTitle>
-          <CardDescription className="mt-1">Your latest 10 transactions</CardDescription>
+          <CardTitle className="text-xl font-semibold">{d.recentTitle}</CardTitle>
+          <CardDescription className="mt-1">{d.recentDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -387,14 +404,16 @@ export default function DashboardPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 space-y-1">
                       <p className="text-sm font-medium">
-                        {transaction.type}
+                        {transactionTypeLabel(transaction.type, m.transactionTypes)}
                         <span className="text-muted-foreground"> • {getTransactionAccountLabel(transaction)}</span>
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {transaction.details?.trim() || "No details"}
+                        {getTransactionSecondaryLabel(transaction)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(parseISO(transaction.date_time), "MMM d, yyyy HH:mm")}
+                        {format(parseISO(transaction.date_time), "MMM d, yyyy HH:mm", {
+                          locale: df,
+                        })}
                       </p>
                     </div>
                     <p
@@ -414,14 +433,14 @@ export default function DashboardPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-sm text-muted-foreground">
                 <Receipt className="mb-3 h-12 w-12 text-muted-foreground/30" />
-                <p>No transactions yet. Start by adding your first transaction!</p>
+                <p>{d.emptyTransactions}</p>
               </div>
             )}
           </div>
           <div className="mt-4 flex justify-end">
             <Button variant="ghost" size="sm" asChild className="gap-2">
               <Link href="/transactions">
-                View all transactions <ArrowRight className="h-4 w-4" />
+                {d.viewAllTransactions} <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
           </div>
@@ -431,29 +450,31 @@ export default function DashboardPage() {
       {/* Exchange Rates */}
       <Card className="shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold">Exchange rate</CardTitle>
-          <CardDescription className="mt-1">Rates are refreshed once per day</CardDescription>
+          <CardTitle className="text-xl font-semibold">{d.exchangeTitle}</CardTitle>
+          <CardDescription className="mt-1">{d.exchangeDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading exchange rates...</p>
+            <p className="text-sm text-muted-foreground">{d.loadingRates}</p>
           ) : exchangeRates ? (
             <div className="space-y-2">
               <p className="text-sm">
-                <span className="text-muted-foreground">1 USD = </span>
+                <span className="text-muted-foreground">{d.oneUsd}</span>
                 <span className="font-semibold">{formatCurrency(exchangeRates.usdToVnd, "VND")}</span>
               </p>
               <p className="text-sm">
-                <span className="text-muted-foreground">1 mace = </span>
+                <span className="text-muted-foreground">{d.oneMace}</span>
                 <span className="font-semibold">{formatCurrency(exchangeRates.maceToVnd, "VND")}</span>
               </p>
               <p className="text-xs text-muted-foreground">
-                Updated: {format(parseISO(exchangeRates.fetchedAt), "MMM d, yyyy HH:mm")} ({exchangeRates.source})
+                {m.common.updated}:{" "}
+                {format(parseISO(exchangeRates.fetchedAt), "MMM d, yyyy HH:mm", { locale: df })} (
+                {exchangeRates.source})
               </p>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Exchange rate is temporarily unavailable.
+              {d.exchangeUnavailable}
             </p>
           )}
         </CardContent>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit2, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -27,17 +27,20 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CategoryIcon } from "@/components/categories/CategoryIcon";
+import { CategoryIconSelect } from "@/components/categories/CategoryIconSelect";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  createExpenseCategorySchema,
-  updateExpenseCategorySchema,
-  createIncomeCategorySchema,
-  updateIncomeCategorySchema,
-  type CreateExpenseCategoryInput,
-  type UpdateExpenseCategoryInput,
-  type CreateIncomeCategoryInput,
-  type UpdateIncomeCategoryInput,
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { incomeCategoryDisplayName } from "@/lib/i18n/category-display-name";
+import { localizedSeedCategoryName } from "@/lib/i18n/seed-category-labels";
+import { buildCategorySchemas } from "@/lib/i18n/zod/category-schemas";
+import type { Locale } from "@/lib/i18n/types";
+import type {
+  CreateExpenseCategoryInput,
+  UpdateExpenseCategoryInput,
+  CreateIncomeCategoryInput,
+  UpdateIncomeCategoryInput,
 } from "@/lib/schemas/category.schema";
 import {
   Select,
@@ -46,7 +49,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CategoryBadge } from "@/components/categories/CategoryBadge";
 import type {
   ExpenseCategory,
   ExpenseCategoryWithChildren,
@@ -61,6 +63,21 @@ type IncomeCategoriesResponse =
   | { success: true; data: { categories: (IncomeCategory & { isDefault: boolean })[] } }
   | { success: false; error: string; code: string };
 
+type ExpenseCategoryMutationResponse =
+  | { success: true; data: { category: ExpenseCategory } }
+  | { success: false; error: string; code: string };
+
+type IncomeCategoryMutationResponse =
+  | { success: true; data: { category: IncomeCategory } }
+  | { success: false; error: string; code: string };
+
+function moveItem<T>(arr: T[], from: number, to: number): T[] {
+  const next = [...arr];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
 /**
  * Category Management Page
  * Implements FR-CAT-001 through FR-CAT-004: Category Management
@@ -68,6 +85,8 @@ type IncomeCategoriesResponse =
  */
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
+  const { messages: m, locale } = useLocaleContext();
+  const sc = m.settings.categories;
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [incomeDialogOpen, setIncomeDialogOpen] = useState(false);
   const [editingExpenseCategory, setEditingExpenseCategory] = useState<ExpenseCategory | null>(null);
@@ -76,6 +95,12 @@ export default function CategoriesPage() {
     null,
   );
   const [deletingIncomeCategory, setDeletingIncomeCategory] = useState<IncomeCategory | null>(
+    null,
+  );
+  const [expenseParentOrder, setExpenseParentOrder] = useState<string[]>([]);
+  const [expenseChildOrder, setExpenseChildOrder] = useState<Record<string, string[]>>({});
+  const [draggingParentId, setDraggingParentId] = useState<string | null>(null);
+  const [draggingChild, setDraggingChild] = useState<{ parentId: string; childId: string } | null>(
     null,
   );
 
@@ -95,7 +120,7 @@ export default function CategoriesPage() {
       if (!res.ok) {
         const errorData = (await res.json().catch(() => null)) as ExpenseCategoriesResponse | null;
         throw new Error(
-          errorData?.success === false ? errorData.error : "Failed to fetch expense categories",
+          errorData?.success === false ? errorData.error : sc.fetchExpenseError,
         );
       }
 
@@ -119,7 +144,7 @@ export default function CategoriesPage() {
       if (!res.ok) {
         const errorData = (await res.json().catch(() => null)) as IncomeCategoriesResponse | null;
         throw new Error(
-          errorData?.success === false ? errorData.error : "Failed to fetch income categories",
+          errorData?.success === false ? errorData.error : sc.fetchIncomeError,
         );
       }
 
@@ -146,7 +171,7 @@ export default function CategoriesPage() {
       const result = (await res.json()) as ExpenseCategoriesResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to create category");
+        throw new Error(result.success === false ? result.error : sc.createFailed);
       }
 
       return result;
@@ -169,15 +194,31 @@ export default function CategoriesPage() {
         body: JSON.stringify(data),
       });
 
-      const result = (await res.json()) as ExpenseCategoriesResponse;
+      const result = (await res.json()) as ExpenseCategoryMutationResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to update category");
+        throw new Error(result.success === false ? result.error : sc.updateFailed);
       }
 
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result.success && editingExpenseCategory && result.data.category.id !== editingExpenseCategory.id) {
+        const oldId = editingExpenseCategory.id;
+        const newId = result.data.category.id;
+
+        if (editingExpenseCategory.parent_category_id === null) {
+          setExpenseParentOrder((prev) => prev.map((id) => (id === oldId ? newId : id)));
+        } else {
+          const parentId = editingExpenseCategory.parent_category_id;
+          if (parentId) {
+            setExpenseChildOrder((prev) => ({
+              ...prev,
+              [parentId]: (prev[parentId] ?? []).map((id) => (id === oldId ? newId : id)),
+            }));
+          }
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["expense-categories"] });
       setEditingExpenseCategory(null);
       setExpenseDialogOpen(false);
@@ -195,7 +236,7 @@ export default function CategoriesPage() {
       const result = (await res.json()) as ExpenseCategoriesResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to delete category");
+        throw new Error(result.success === false ? result.error : sc.deleteFailed);
       }
 
       return result;
@@ -222,7 +263,7 @@ export default function CategoriesPage() {
       const result = (await res.json()) as IncomeCategoriesResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to create category");
+        throw new Error(result.success === false ? result.error : sc.createFailed);
       }
 
       return result;
@@ -245,10 +286,10 @@ export default function CategoriesPage() {
         body: JSON.stringify(data),
       });
 
-      const result = (await res.json()) as IncomeCategoriesResponse;
+      const result = (await res.json()) as IncomeCategoryMutationResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to update category");
+        throw new Error(result.success === false ? result.error : sc.updateFailed);
       }
 
       return result;
@@ -271,7 +312,7 @@ export default function CategoriesPage() {
       const result = (await res.json()) as IncomeCategoriesResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to delete category");
+        throw new Error(result.success === false ? result.error : sc.deleteFailed);
       }
 
       return result;
@@ -282,21 +323,86 @@ export default function CategoriesPage() {
     },
   });
 
+  // Load persisted order preferences once
+  useEffect(() => {
+    try {
+      const rawParent = localStorage.getItem("pm_expense_parent_order_v1");
+      const rawChild = localStorage.getItem("pm_expense_child_order_v1");
+      if (rawParent) {
+        setExpenseParentOrder(JSON.parse(rawParent) as string[]);
+      }
+      if (rawChild) {
+        setExpenseChildOrder(JSON.parse(rawChild) as Record<string, string[]>);
+      }
+    } catch {
+      // ignore invalid persisted state
+    }
+  }, []);
+
+  // Keep parent order stable as categories update
+  useEffect(() => {
+    if (expenseCategories.length === 0) return;
+    const parentIds = expenseCategories.map((p) => p.id);
+    setExpenseParentOrder((prev) => {
+      const kept = prev.filter((id) => parentIds.includes(id));
+      const missing = parentIds.filter((id) => !kept.includes(id));
+      return [...kept, ...missing];
+    });
+  }, [expenseCategories]);
+
+  // Keep child order stable as categories update
+  useEffect(() => {
+    if (expenseCategories.length === 0) return;
+    setExpenseChildOrder((prev) => {
+      const next: Record<string, string[]> = {};
+      for (const parent of expenseCategories) {
+        const childIds = parent.children.map((c) => c.id);
+        const existing = prev[parent.id] ?? [];
+        const kept = existing.filter((id) => childIds.includes(id));
+        const missing = childIds.filter((id) => !kept.includes(id));
+        next[parent.id] = [...kept, ...missing];
+      }
+      return next;
+    });
+  }, [expenseCategories]);
+
+  // Persist order preferences
+  useEffect(() => {
+    localStorage.setItem("pm_expense_parent_order_v1", JSON.stringify(expenseParentOrder));
+  }, [expenseParentOrder]);
+
+  useEffect(() => {
+    localStorage.setItem("pm_expense_child_order_v1", JSON.stringify(expenseChildOrder));
+  }, [expenseChildOrder]);
+
+  const orderedExpenseCategories = useMemo(() => {
+    const indexById = new Map(expenseParentOrder.map((id, idx) => [id, idx]));
+    return [...expenseCategories].sort(
+      (a, b) => (indexById.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (indexById.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [expenseCategories, expenseParentOrder]);
+
+  function orderedChildren(parent: ExpenseCategoryWithChildren): ExpenseCategory[] {
+    const order = expenseChildOrder[parent.id] ?? [];
+    const indexById = new Map(order.map((id, idx) => [id, idx]));
+    return [...parent.children].sort(
+      (a, b) => (indexById.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (indexById.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Category Management</h1>
-          <p className="text-muted-foreground">
-            Manage your expense and income categories. Default categories are read-only.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{sc.title}</h1>
+          <p className="text-muted-foreground">{sc.subtitle}</p>
         </div>
       </div>
 
       <Tabs defaultValue="expense" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="expense">Expense Categories</TabsTrigger>
-          <TabsTrigger value="income">Income Categories</TabsTrigger>
+          <TabsTrigger value="expense">{sc.tabExpense}</TabsTrigger>
+          <TabsTrigger value="income">{sc.tabIncome}</TabsTrigger>
         </TabsList>
 
         {/* Expense Categories Tab */}
@@ -311,12 +417,14 @@ export default function CategoriesPage() {
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Custom Category
+                  {sc.createCustom}
                 </Button>
               </DialogTrigger>
               <ExpenseCategoryDialog
+                key={editingExpenseCategory?.id ?? "new-expense"}
                 category={editingExpenseCategory}
                 parentCategories={expenseCategories}
+                locale={locale}
                 onSubmit={async (data) => {
                   if (editingExpenseCategory) {
                     await updateExpenseMutation.mutateAsync({
@@ -340,67 +448,134 @@ export default function CategoriesPage() {
 
           {expenseLoading && !expenseData ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground">Loading categories...</div>
+              <div className="text-muted-foreground">{sc.loading}</div>
             </div>
           ) : (
             <div className="space-y-4">
-              {expenseCategories.map((parent) => (
+              {orderedExpenseCategories.map((parent) => (
                 <Card key={parent.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CardTitle>{parent.name}</CardTitle>
-                        {parent.isDefault && (
-                          <CategoryBadge category={parent} isDefault variant="outline" />
-                        )}
+                  <CardHeader
+                    draggable
+                    onDragStart={() => setDraggingParentId(parent.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (!draggingParentId || draggingParentId === parent.id) return;
+                      const from = expenseParentOrder.indexOf(draggingParentId);
+                      const to = expenseParentOrder.indexOf(parent.id);
+                      if (from === -1 || to === -1) return;
+                      setExpenseParentOrder((prev) => moveItem(prev, from, to));
+                      setDraggingParentId(null);
+                    }}
+                    className="cursor-move"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle>
+                        <span className="flex items-center gap-2">
+                          <CategoryIcon icon={parent.icon} name={parent.name} kind="expense" />
+                          {localizedSeedCategoryName(
+                            parent.name,
+                            parent.isDefault,
+                            locale,
+                            "expense",
+                          )}
+                        </span>
+                      </CardTitle>
+                      <div className="flex shrink-0 gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingExpenseCategory(parent);
+                            setExpenseDialogOpen(true);
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingExpenseCategory(parent)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
                     {parent.children.length > 0 && (
                       <CardDescription>
-                        {parent.children.length} sub-categor{parent.children.length === 1 ? "y" : "ies"}
+                        {parent.children.length === 1
+                          ? sc.subCountOne.replace("{n}", String(parent.children.length))
+                          : sc.subCountMany.replace("{n}", String(parent.children.length))}
                       </CardDescription>
                     )}
                   </CardHeader>
                   <CardContent>
                     {parent.children.length > 0 ? (
                       <div className="space-y-2">
-                        {parent.children.map((child) => (
+                        {orderedChildren(parent).map((child) => (
                           <div
                             key={child.id}
                             className="flex items-center justify-between rounded-lg border p-3"
+                            draggable
+                            onDragStart={() =>
+                              setDraggingChild({ parentId: parent.id, childId: child.id })
+                            }
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => {
+                              if (!draggingChild) return;
+                              if (draggingChild.parentId !== parent.id) return;
+                              if (draggingChild.childId === child.id) return;
+                              const list = expenseChildOrder[parent.id] ?? [];
+                              const from = list.indexOf(draggingChild.childId);
+                              const to = list.indexOf(child.id);
+                              if (from === -1 || to === -1) return;
+                              setExpenseChildOrder((prev) => ({
+                                ...prev,
+                                [parent.id]: moveItem(prev[parent.id] ?? [], from, to),
+                              }));
+                              setDraggingChild(null);
+                            }}
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-sm">• {child.name}</span>
-                              {child.user_id === null && (
-                                <CategoryBadge category={child} isDefault variant="outline" />
-                              )}
+                              <span className="text-sm">
+                                <span className="mr-2 align-middle">•</span>
+                                <CategoryIcon
+                                  icon={child.icon}
+                                  name={child.name}
+                                  kind="expense"
+                                  className="mr-2 inline-block align-middle"
+                                />
+                                {localizedSeedCategoryName(
+                                  child.name,
+                                  child.user_id === null,
+                                  locale,
+                                  "expense",
+                                )}
+                              </span>
                             </div>
-                            {child.user_id !== null && (
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingExpenseCategory(child);
-                                    setExpenseDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setDeletingExpenseCategory(child)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            )}
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingExpenseCategory(child);
+                                  setExpenseDialogOpen(true);
+                                }}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeletingExpenseCategory(child)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No sub-categories</p>
+                      <p className="text-sm text-muted-foreground">{sc.noSub}</p>
                     )}
                   </CardContent>
                 </Card>
@@ -421,10 +596,11 @@ export default function CategoriesPage() {
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Custom Category
+                  {sc.createCustom}
                 </Button>
               </DialogTrigger>
               <IncomeCategoryDialog
+                key={editingIncomeCategory?.id ?? "new-income"}
                 category={editingIncomeCategory}
                 onSubmit={async (data) => {
                   if (editingIncomeCategory) {
@@ -449,7 +625,7 @@ export default function CategoriesPage() {
 
           {incomeLoading && !incomeData ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground">Loading categories...</div>
+              <div className="text-muted-foreground">{sc.loading}</div>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -457,33 +633,31 @@ export default function CategoriesPage() {
                 <Card key={category.id}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{category.name}</span>
-                        {category.isDefault && (
-                          <CategoryBadge category={category} isDefault variant="outline" />
-                        )}
+                      <span className="font-medium">
+                        <span className="flex items-center gap-2">
+                          <CategoryIcon icon={category.icon} name={category.name} kind="income" />
+                          {incomeCategoryDisplayName(category, locale)}
+                        </span>
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingIncomeCategory(category);
+                            setIncomeDialogOpen(true);
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingIncomeCategory(category)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                      {!category.isDefault && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingIncomeCategory(category);
-                              setIncomeDialogOpen(true);
-                            }}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeletingIncomeCategory(category)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -494,7 +668,7 @@ export default function CategoriesPage() {
       </Tabs>
 
       {(expenseFetching || incomeFetching) && (expenseData || incomeData) && (
-        <p className="text-sm text-muted-foreground">Refreshing categories...</p>
+        <p className="text-sm text-muted-foreground">{sc.refreshing}</p>
       )}
 
       {/* Delete Expense Category Dialog */}
@@ -504,14 +678,13 @@ export default function CategoriesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogTitle>{sc.deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingExpenseCategory?.name}"? This action cannot
-              be undone.
+              {sc.deleteConfirm.replace("{name}", deletingExpenseCategory?.name ?? "")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{m.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingExpenseCategory) {
@@ -520,7 +693,7 @@ export default function CategoriesPage() {
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {m.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -533,14 +706,13 @@ export default function CategoriesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogTitle>{sc.deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingIncomeCategory?.name}"? This action cannot
-              be undone.
+              {sc.deleteConfirm.replace("{name}", deletingIncomeCategory?.name ?? "")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{m.common.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingIncomeCategory) {
@@ -549,7 +721,7 @@ export default function CategoriesPage() {
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {m.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -562,99 +734,126 @@ export default function CategoriesPage() {
 function ExpenseCategoryDialog({
   category,
   parentCategories,
+  locale,
   onSubmit,
   isLoading,
   onClose,
 }: {
   category: ExpenseCategory | null;
   parentCategories: ExpenseCategoryWithChildren[];
+  locale: Locale;
   onSubmit: (data: CreateExpenseCategoryInput | UpdateExpenseCategoryInput) => Promise<void>;
   isLoading: boolean;
   onClose: () => void;
 }) {
+  const { messages: m } = useLocaleContext();
+  const sc = m.settings.categories;
+  const categorySchemas = useMemo(() => buildCategorySchemas(m), [m]);
   const isEdit = category !== null;
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<CreateExpenseCategoryInput | UpdateExpenseCategoryInput>({
-    resolver: zodResolver(isEdit ? updateExpenseCategorySchema : createExpenseCategorySchema),
+    resolver: zodResolver(
+      isEdit ? categorySchemas.updateExpense : categorySchemas.createExpense,
+    ),
     defaultValues: isEdit
       ? {
           name: category.name,
           parentCategoryId: category.parent_category_id || null,
+          icon: category.icon ?? undefined,
         }
       : {
           name: "",
           parentCategoryId: null,
+          icon: "tag",
         },
   });
 
   async function handleSubmit(
     values: CreateExpenseCategoryInput | UpdateExpenseCategoryInput,
   ) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/c56f0928-d79a-49ad-9aae-38efc54ee0e6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c5492e'},body:JSON.stringify({sessionId:'c5492e',location:'categories/page.tsx:handleSubmit',message:'Form passed validation - values submitted',data:{values},timestamp:Date.now(),hypothesisId:'H-A,H-D'})}).catch(()=>{});
-    // #endregion
+    setSubmitError(null);
     try {
       await onSubmit(values);
       form.reset();
     } catch (error) {
-      // Error is handled by mutation
+      const message = error instanceof Error ? error.message : sc.updateFailed;
+      setSubmitError(message);
     }
   }
-
-  // #region agent log
-  function onInvalid(errors: any) {
-    fetch('http://127.0.0.1:7242/ingest/c56f0928-d79a-49ad-9aae-38efc54ee0e6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c5492e'},body:JSON.stringify({sessionId:'c5492e',location:'categories/page.tsx:onInvalid',message:'Form FAILED validation - zod errors',data:{errors,parentCategoryIdError:errors?.parentCategoryId,currentFieldValue:form.getValues('parentCategoryId')},timestamp:Date.now(),hypothesisId:'H-A,H-D'})}).catch(()=>{});
-  }
-  // #endregion
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{isEdit ? "Edit Category" : "Create Custom Category"}</DialogTitle>
+        <DialogTitle>{isEdit ? sc.dialogEdit : sc.dialogCreate}</DialogTitle>
         <DialogDescription>
-          {isEdit
-            ? "Update the category name or move it to a different parent category."
-            : "Create a new custom expense category. You can create a parent category or a child category under an existing parent."}
+          {isEdit ? sc.expenseDialogEditDesc : sc.expenseDialogCreateDesc}
         </DialogDescription>
       </DialogHeader>
-      <form onSubmit={form.handleSubmit(handleSubmit, onInvalid)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
         <div className="space-y-2">
-          <Label htmlFor="name">Category Name</Label>
-          <Input id="name" placeholder="e.g. Subscriptions" {...form.register("name")} />
+          <Label htmlFor="name">{sc.categoryName}</Label>
+          <Input id="name" placeholder={sc.namePlaceholderExpense} {...form.register("name")} />
           {form.formState.errors.name?.message && (
             <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="parentCategoryId">Parent Category (Optional)</Label>
+          <Label htmlFor="icon">{sc.iconLabel}</Label>
           <Controller
             control={form.control}
-            name="parentCategoryId"
+            name="icon"
             render={({ field }) => (
-              <Select
-                onValueChange={(value) => {
-                  // #region agent log
-                  fetch('http://127.0.0.1:7242/ingest/c56f0928-d79a-49ad-9aae-38efc54ee0e6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c5492e'},body:JSON.stringify({sessionId:'c5492e',location:'categories/page.tsx:Select.onValueChange',message:'Select value changed',data:{rawValue:value,typeofValue:typeof value,sentToField:value === "none" ? null : value},timestamp:Date.now(),hypothesisId:'H-B,H-C'})}).catch(()=>{});
-                  // #endregion
-                  field.onChange(value === "none" ? null : value);
-                }}
-                value={field.value || "none"}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select parent category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None (Top-level category)</SelectItem>
-                  {parentCategories.map((parent) => (
-                    <SelectItem key={parent.id} value={parent.id}>
-                      {parent.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CategoryIconSelect
+                kind="expense"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder={sc.iconPlaceholder}
+                triggerId="icon"
+              />
             )}
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="parentCategoryId">{sc.parentCategoryLabel}</Label>
+          {isEdit && category.parent_category_id === null ? (
+            <p className="text-sm text-muted-foreground" id="parentCategoryId">
+              {sc.parentTopLevelNote}
+            </p>
+          ) : (
+            <Controller
+              control={form.control}
+              name="parentCategoryId"
+              render={({ field }) => (
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value === "none" ? null : value);
+                  }}
+                  value={field.value || "none"}
+                >
+                  <SelectTrigger id="parentCategoryId">
+                    <SelectValue placeholder={sc.selectParentPlaceholder} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{sc.parentNone}</SelectItem>
+                    {parentCategories.map((parent) => (
+                      <SelectItem key={parent.id} value={parent.id}>
+                        {localizedSeedCategoryName(
+                          parent.name,
+                          parent.isDefault,
+                          locale,
+                          "expense",
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          )}
           {form.formState.errors.parentCategoryId?.message && (
             <p className="text-sm text-destructive">
               {form.formState.errors.parentCategoryId.message}
@@ -664,10 +863,14 @@ function ExpenseCategoryDialog({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
+            {m.common.cancel}
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : isEdit ? "Save Changes" : "Create Category"}
+            {isLoading
+              ? m.common.saving
+              : isEdit
+                ? m.accounts.saveChanges
+                : sc.submitCreate}
           </Button>
         </DialogFooter>
       </form>
@@ -687,53 +890,83 @@ function IncomeCategoryDialog({
   isLoading: boolean;
   onClose: () => void;
 }) {
+  const { messages: m } = useLocaleContext();
+  const sc = m.settings.categories;
+  const categorySchemas = useMemo(() => buildCategorySchemas(m), [m]);
   const isEdit = category !== null;
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<CreateIncomeCategoryInput | UpdateIncomeCategoryInput>({
-    resolver: zodResolver(isEdit ? updateIncomeCategorySchema : createIncomeCategorySchema),
+    resolver: zodResolver(
+      isEdit ? categorySchemas.updateIncome : categorySchemas.createIncome,
+    ),
     defaultValues: isEdit
       ? {
           name: category.name,
+          icon: category.icon ?? undefined,
         }
       : {
           name: "",
+          icon: "tag",
         },
   });
 
   async function handleSubmit(values: CreateIncomeCategoryInput | UpdateIncomeCategoryInput) {
+    setSubmitError(null);
     try {
       await onSubmit(values);
       form.reset();
     } catch (error) {
-      // Error is handled by mutation
+      const message = error instanceof Error ? error.message : sc.updateFailed;
+      setSubmitError(message);
     }
   }
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{isEdit ? "Edit Category" : "Create Custom Category"}</DialogTitle>
+        <DialogTitle>{isEdit ? sc.dialogEdit : sc.dialogCreate}</DialogTitle>
         <DialogDescription>
-          {isEdit
-            ? "Update the category name."
-            : "Create a new custom income category."}
+          {isEdit ? sc.incomeDialogEditDesc : sc.incomeDialogCreateDesc}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
         <div className="space-y-2">
-          <Label htmlFor="name">Category Name</Label>
-          <Input id="name" placeholder="e.g. Bonus" {...form.register("name")} />
+          <Label htmlFor="name">{sc.categoryName}</Label>
+          <Input id="name" placeholder={sc.namePlaceholderIncome} {...form.register("name")} />
           {form.formState.errors.name?.message && (
             <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
           )}
         </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="income-icon">{sc.iconLabel}</Label>
+          <Controller
+            control={form.control}
+            name="icon"
+            render={({ field }) => (
+              <CategoryIconSelect
+                kind="income"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder={sc.iconPlaceholder}
+                triggerId="income-icon"
+              />
+            )}
+          />
+        </div>
+
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
+            {m.common.cancel}
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : isEdit ? "Save Changes" : "Create Category"}
+            {isLoading
+              ? m.common.saving
+              : isEdit
+                ? m.accounts.saveChanges
+                : sc.submitCreate}
           </Button>
         </DialogFooter>
       </form>

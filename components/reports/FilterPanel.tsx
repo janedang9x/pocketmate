@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
 
 export interface FilterPanelProps {
   title?: string;
@@ -30,7 +31,7 @@ export interface FilterPanelProps {
  * Sprint 4.1 — Report Infrastructure
  */
 export function FilterPanel({
-  title = "Filters",
+  title,
   description,
   children,
   className,
@@ -38,6 +39,8 @@ export function FilterPanel({
   collapsed: collapsedProp,
   onCollapsedChange,
 }: FilterPanelProps) {
+  const { messages: m } = useLocaleContext();
+  const r = m.reports;
   const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
   const isControlled = collapsedProp !== undefined;
   const collapsed = isControlled ? collapsedProp : internalCollapsed;
@@ -49,15 +52,18 @@ export function FilterPanel({
     onCollapsedChange?.(next);
   }
 
+  const panelTitle = title ?? r.filterTitle;
+  const panelDesc = description ?? r.filterGenericDesc;
+
   return (
     <Card className={cn(className)}>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
         <div className="space-y-1">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Filter className="h-4 w-4 text-muted-foreground" aria-hidden />
-            {title}
+            {panelTitle}
           </CardTitle>
-          {description ? <CardDescription>{description}</CardDescription> : null}
+          {panelDesc ? <CardDescription>{panelDesc}</CardDescription> : null}
         </div>
         <Button
           type="button"
@@ -69,12 +75,12 @@ export function FilterPanel({
         >
           {collapsed ? (
             <>
-              Show
+              {m.common.show}
               <ChevronDown className="h-4 w-4" aria-hidden />
             </>
           ) : (
             <>
-              Hide
+              {m.common.hide}
               <ChevronUp className="h-4 w-4" aria-hidden />
             </>
           )}

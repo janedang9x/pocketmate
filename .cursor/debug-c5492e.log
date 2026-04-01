@@ -1,2 +1,0 @@
-{"sessionId":"c5492e","location":"categories/page.tsx:Select.onValueChange","message":"Select value changed","data":{"rawValue":"77777777-7777-7777-7777-777777777777","typeofValue":"string","sentToField":"77777777-7777-7777-7777-777777777777"},"timestamp":1773650320338,"hypothesisId":"H-B,H-C"}
-{"sessionId":"c5492e","location":"categories/page.tsx:handleSubmit","message":"Form passed validation - values submitted","data":{"values":{"name":"Concert","parentCategoryId":"77777777-7777-7777-7777-777777777777"}},"timestamp":1773650321474,"hypothesisId":"H-A,H-D"}

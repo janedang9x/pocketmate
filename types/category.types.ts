@@ -28,6 +28,7 @@ export interface ExpenseCategoryWithChildren extends ExpenseCategory {
 export interface CreateExpenseCategoryInput {
   name: string;
   parentCategoryId?: string | null;
+  icon?: string;
 }
 
 /**
@@ -37,6 +38,7 @@ export interface CreateExpenseCategoryInput {
 export interface UpdateExpenseCategoryInput {
   name?: string;
   parentCategoryId?: string | null;
+  icon?: string;
 }
 
 /**
@@ -45,6 +47,7 @@ export interface UpdateExpenseCategoryInput {
  */
 export interface CreateIncomeCategoryInput {
   name: string;
+  icon?: string;
 }
 
 /**
@@ -53,4 +56,5 @@ export interface CreateIncomeCategoryInput {
  */
 export interface UpdateIncomeCategoryInput {
   name?: string;
+  icon?: string;
 }

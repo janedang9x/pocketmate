@@ -10,6 +10,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { localizedSeedCategoryName } from "@/lib/i18n/seed-category-labels";
+import type { Locale } from "@/lib/i18n/types";
 import { cn } from "@/lib/utils";
 import type { ExpenseCategoryWithChildren } from "@/types/category.types";
 
@@ -96,21 +99,28 @@ function childCheckboxChecked(
 function summarizeSelection(
   categories: ExpenseCategoryWithChildren[],
   selected: Set<string>,
+  locale: Locale,
+  allLabel: string,
+  selectedCountLabel: string,
 ): string {
-  if (selected.size === 0) return "All categories";
+  if (selected.size === 0) return allLabel;
 
   const names: string[] = [];
   for (const p of categories) {
+    const pLabel = localizedSeedCategoryName(p.name, p.isDefault, locale, "expense");
     if (selected.has(p.id)) {
-      names.push(p.name);
+      names.push(pLabel);
       continue;
     }
     for (const c of p.children ?? []) {
-      if (selected.has(c.id)) names.push(`${p.name}: ${c.name}`);
+      if (selected.has(c.id)) {
+        const cLabel = localizedSeedCategoryName(c.name, c.user_id === null, locale, "expense");
+        names.push(`${pLabel}: ${cLabel}`);
+      }
     }
   }
 
-  if (names.length === 0) return `${selected.size} selected`;
+  if (names.length === 0) return selectedCountLabel.replace("{n}", String(selected.size));
   if (names.length <= 2) return names.join(", ");
   return `${names.slice(0, 2).join(", ")} +${names.length - 2}`;
 }
@@ -127,10 +137,19 @@ export function ExpenseCategoryFilterDropdown({
   className,
 }: ExpenseCategoryFilterDropdownProps) {
   const [open, setOpen] = useState(false);
+  const { messages: m, locale } = useLocaleContext();
+  const r = m.reports;
 
   const summary = useMemo(
-    () => summarizeSelection(categories, selectedIds),
-    [categories, selectedIds],
+    () =>
+      summarizeSelection(
+        categories,
+        selectedIds,
+        locale,
+        r.filterAllCategoriesSummary,
+        r.filterSelectedCount,
+      ),
+    [categories, selectedIds, locale, r.filterAllCategoriesSummary, r.filterSelectedCount],
   );
 
   function clearAll() {
@@ -139,11 +158,8 @@ export function ExpenseCategoryFilterDropdown({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <Label className="text-xs text-muted-foreground">Categories</Label>
-      <p className="text-xs text-muted-foreground">
-        Open the list to filter. Selecting a parent includes every subcategory. Leave empty for all
-        categories.
-      </p>
+      <Label className="text-xs text-muted-foreground">{r.filterCategoriesLabel}</Label>
+      <p className="text-xs text-muted-foreground">{r.filterExpenseHint}</p>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -168,7 +184,7 @@ export function ExpenseCategoryFilterDropdown({
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
             <span className="text-xs font-medium text-muted-foreground">
-              Expense categories
+              {r.filterExpenseListTitle}
             </span>
             <Button
               type="button"
@@ -178,19 +194,25 @@ export function ExpenseCategoryFilterDropdown({
               onClick={clearAll}
               disabled={selectedIds.size === 0}
             >
-              Clear
+              {r.filterClear}
             </Button>
           </div>
           <div className="max-h-[min(320px,50vh)] overflow-y-auto p-2">
             {categories.length === 0 ? (
               <p className="px-2 py-4 text-center text-sm text-muted-foreground">
-                No categories
+                {r.filterNoCategories}
               </p>
             ) : (
-              <ul className="space-y-1" role="group" aria-label="Expense categories">
+              <ul className="space-y-1" role="group" aria-label={r.filterExpenseListTitle}>
                 {categories.map((parent) => {
                   const pState = parentCheckboxState(parent, selectedIds);
                   const children = parent.children ?? [];
+                  const parentLabel = localizedSeedCategoryName(
+                    parent.name,
+                    parent.isDefault,
+                    locale,
+                    "expense",
+                  );
 
                   return (
                     <li key={parent.id} className="rounded-md">
@@ -210,7 +232,7 @@ export function ExpenseCategoryFilterDropdown({
                           htmlFor={`exp-cat-parent-${parent.id}`}
                           className="cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          {parent.name}
+                          {parentLabel}
                         </label>
                       </div>
                       {children.length > 0 ? (
@@ -233,7 +255,12 @@ export function ExpenseCategoryFilterDropdown({
                                   htmlFor={`exp-cat-child-${child.id}`}
                                   className="cursor-pointer text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                 >
-                                  {child.name}
+                                  {localizedSeedCategoryName(
+                                    child.name,
+                                    child.user_id === null,
+                                    locale,
+                                    "expense",
+                                  )}
                                 </label>
                               </div>
                             </li>

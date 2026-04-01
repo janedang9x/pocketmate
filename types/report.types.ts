@@ -9,6 +9,12 @@ export interface ExpenseReportSubcategory {
   amount: number;
   percentage: number;
   transactionCount: number;
+  /** True when this row is a seed default category (`user_id` IS NULL). */
+  isSystemDefault?: boolean;
+  /** True when `categoryName` is `{parentName} (general)` (expense on parent). */
+  isParentGeneral?: boolean;
+  /** When `isParentGeneral`, whether the parent category is a seed default. */
+  parentIsSystemDefault?: boolean;
 }
 
 export interface ExpenseReportCategoryRow {
@@ -18,6 +24,8 @@ export interface ExpenseReportCategoryRow {
   percentage: number;
   transactionCount: number;
   subcategories: ExpenseReportSubcategory[];
+  /** True when this row is a seed default category (`user_id` IS NULL). */
+  isSystemDefault?: boolean;
 }
 
 export interface ExpenseReportOvertimeRow {
@@ -51,6 +59,8 @@ export interface IncomeReportCategoryRow {
   amount: number;
   percentage: number;
   transactionCount: number;
+  /** True when this row is a seed default category (`user_id` IS NULL). */
+  isSystemDefault?: boolean;
 }
 
 export interface IncomeReportOvertimeRow {

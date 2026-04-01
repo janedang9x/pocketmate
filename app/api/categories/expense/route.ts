@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { authenticateRequest, jsonError, jsonSuccess } from "@/lib/utils/api";
 import { createExpenseCategorySchema } from "@/lib/schemas/category.schema";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { fetchHiddenDefaultCategoryIds } from "@/lib/category-defaults";
 import type { ExpenseCategory, ExpenseCategoryWithChildren } from "@/types/category.types";
 import type { Database } from "@/types/database.types";
 
@@ -41,7 +42,10 @@ export async function GET(req: NextRequest) {
       return jsonSuccess({ categories: [] });
     }
 
-    const typedCategories = categories as ExpenseCategoryRow[];
+    const hiddenIds = await fetchHiddenDefaultCategoryIds(supabase, user.id, "expense");
+    const typedCategories = (categories as ExpenseCategoryRow[]).filter(
+      (c) => !hiddenIds.has(c.id),
+    );
 
     // Build hierarchical structure: parent categories with children
     const parentCategories = typedCategories.filter((cat) => cat.parent_category_id === null);
@@ -136,6 +140,7 @@ export async function POST(req: NextRequest) {
         user_id: user.id,
         name: validatedData.name.trim(),
         parent_category_id: validatedData.parentCategoryId || null,
+        icon: validatedData.icon ?? null,
       })
       .select()
       .single();

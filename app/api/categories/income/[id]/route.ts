@@ -3,6 +3,11 @@ import { ZodError } from "zod";
 import { authenticateRequest, jsonError, jsonSuccess } from "@/lib/utils/api";
 import { updateIncomeCategorySchema } from "@/lib/schemas/category.schema";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import {
+  deleteIncomeCategoryByHidingDefault,
+  fetchHiddenDefaultCategoryIds,
+  forkDefaultIncomeCategory,
+} from "@/lib/category-defaults";
 import type { IncomeCategory } from "@/types/category.types";
 import type { Database } from "@/types/database.types";
 
@@ -49,9 +54,33 @@ export async function PUT(
 
     const categoryRow = existingCategory as IncomeCategoryRow;
 
-    // Cannot edit default categories
     if (categoryRow.user_id === null) {
-      return jsonError(403, "Cannot edit default categories", "FORBIDDEN");
+      const hiddenIds = await fetchHiddenDefaultCategoryIds(supabase, user.id, "income");
+      const finalName =
+        validatedData.name !== undefined ? validatedData.name.trim() : categoryRow.name;
+      const forkResult = await forkDefaultIncomeCategory(
+        supabase,
+        user.id,
+        categoryRow,
+        finalName,
+        validatedData.icon,
+        hiddenIds,
+      );
+
+
+      if (forkResult.error || !forkResult.category) {
+        const msg = forkResult.error ?? "Failed to update category";
+        const code =
+          msg.includes("already exists") || msg.includes("duplicate")
+            ? "DUPLICATE_ERROR"
+            : msg.includes("Missing required table user_hidden_default_categories")
+              ? "SERVER_ERROR"
+            : "SERVER_ERROR";
+        const status = code === "DUPLICATE_ERROR" ? 409 : 500;
+        return jsonError(status, msg, code);
+      }
+
+      return jsonSuccess({ category: forkResult.category }, "Category updated successfully");
     }
 
     // Check for duplicate name if name is being changed
@@ -73,6 +102,9 @@ export async function PUT(
     const updateData: Partial<IncomeCategoryRow> = {};
     if (validatedData.name !== undefined) {
       updateData.name = validatedData.name.trim();
+    }
+    if (validatedData.icon !== undefined) {
+      updateData.icon = validatedData.icon;
     }
 
     // Update category
@@ -143,9 +175,14 @@ export async function DELETE(
 
     const deleteCategoryRow = category as IncomeCategoryRow;
 
-    // Cannot delete default categories
     if (deleteCategoryRow.user_id === null) {
-      return jsonError(403, "Cannot delete default categories", "FORBIDDEN");
+      const del = await deleteIncomeCategoryByHidingDefault(supabase, user.id, deleteCategoryRow);
+      if (del.error) {
+        const code = del.error.includes("transaction(s)") ? "FOREIGN_KEY_ERROR" : "SERVER_ERROR";
+        const status = code === "FOREIGN_KEY_ERROR" ? 400 : 500;
+        return jsonError(status, del.error, code);
+      }
+      return jsonSuccess(null, "Category deleted successfully");
     }
 
     // Check if category has transactions

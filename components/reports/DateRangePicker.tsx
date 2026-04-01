@@ -4,6 +4,7 @@ import { Calendar } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
 
 export interface DateRangePickerProps {
   /** `YYYY-MM-DD` or empty */
@@ -30,6 +31,7 @@ export function DateRangePicker({
   disabled,
   idPrefix = "report",
 }: DateRangePickerProps) {
+  const { messages: m } = useLocaleContext();
   const startId = `${idPrefix}-start`;
   const endId = `${idPrefix}-end`;
 
@@ -37,12 +39,12 @@ export function DateRangePicker({
     <div
       className={cn(
         "flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3",
-        className
+        className,
       )}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <Label htmlFor={startId} className="text-xs text-muted-foreground">
-          From
+          {m.common.from}
         </Label>
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -58,7 +60,7 @@ export function DateRangePicker({
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <Label htmlFor={endId} className="text-xs text-muted-foreground">
-          To
+          {m.common.rangeTo}
         </Label>
         <Input
           id={endId}

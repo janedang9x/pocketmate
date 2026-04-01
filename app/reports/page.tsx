@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowRight,
@@ -12,18 +14,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
 
 /**
  * Reports hub — links to expense, income, comparison, and statement reports (Phase 4).
  */
 export default function ReportsPage() {
+  const { messages: m } = useLocaleContext();
+  const r = m.reports;
+
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
-        <p className="mt-1 text-muted-foreground">
-          Analytics and breakdowns for your finances
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{r.hubTitle}</h1>
+        <p className="mt-1 text-muted-foreground">{r.hubSubtitle}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -36,10 +40,8 @@ export default function ReportsPage() {
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
               </div>
-              <CardTitle className="text-lg">Expense report</CardTitle>
-              <CardDescription>
-                Totals, category mix, and spending over time (FR-RPT-001)
-              </CardDescription>
+              <CardTitle className="text-lg">{r.cardExpenseTitle}</CardTitle>
+              <CardDescription>{r.cardExpenseDesc}</CardDescription>
             </CardHeader>
           </Card>
         </Link>
@@ -53,10 +55,8 @@ export default function ReportsPage() {
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
               </div>
-              <CardTitle className="text-lg">Income report</CardTitle>
-              <CardDescription>
-                Totals, source mix, and inflow trends over time (FR-RPT-002)
-              </CardDescription>
+              <CardTitle className="text-lg">{r.cardIncomeTitle}</CardTitle>
+              <CardDescription>{r.cardIncomeDesc}</CardDescription>
             </CardHeader>
           </Card>
         </Link>
@@ -70,10 +70,8 @@ export default function ReportsPage() {
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
               </div>
-              <CardTitle className="text-lg">Comparison report</CardTitle>
-              <CardDescription>
-                Income vs expense totals, savings rate, and trends (FR-RPT-003)
-              </CardDescription>
+              <CardTitle className="text-lg">{r.cardComparisonTitle}</CardTitle>
+              <CardDescription>{r.cardComparisonDesc}</CardDescription>
             </CardHeader>
           </Card>
         </Link>
@@ -87,10 +85,8 @@ export default function ReportsPage() {
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
               </div>
-              <CardTitle className="text-lg">Financial statement</CardTitle>
-              <CardDescription>
-                Assets, liabilities, and net worth snapshot (FR-RPT-004)
-              </CardDescription>
+              <CardTitle className="text-lg">{r.cardStatementTitle}</CardTitle>
+              <CardDescription>{r.cardStatementDesc}</CardDescription>
             </CardHeader>
           </Card>
         </Link>

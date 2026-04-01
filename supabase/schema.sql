@@ -30,6 +30,7 @@ CREATE TABLE expense_categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES user_account(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
+    icon VARCHAR(50),
     parent_category_id UUID REFERENCES expense_categories(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -39,6 +40,7 @@ CREATE TABLE income_categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES user_account(id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
+    icon VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

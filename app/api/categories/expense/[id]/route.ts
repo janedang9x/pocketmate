@@ -3,6 +3,12 @@ import { ZodError } from "zod";
 import { authenticateRequest, jsonError, jsonSuccess } from "@/lib/utils/api";
 import { updateExpenseCategorySchema } from "@/lib/schemas/category.schema";
 import { createSupabaseServerClient } from "@/lib/supabase";
+import {
+  deleteExpenseCategoryByHidingDefault,
+  fetchHiddenDefaultCategoryIds,
+  forkDefaultExpenseChild,
+  forkDefaultExpenseParent,
+} from "@/lib/category-defaults";
 import type { ExpenseCategory } from "@/types/category.types";
 import type { Database } from "@/types/database.types";
 
@@ -49,9 +55,50 @@ export async function PUT(
 
     const categoryRow = existingCategory as ExpenseCategoryRow;
 
-    // Cannot edit default categories
     if (categoryRow.user_id === null) {
-      return jsonError(403, "Cannot edit default categories", "FORBIDDEN");
+      const hiddenIds = await fetchHiddenDefaultCategoryIds(supabase, user.id, "expense");
+      const forkResult =
+        categoryRow.parent_category_id === null
+          ? await forkDefaultExpenseParent(
+              supabase,
+              user.id,
+              categoryRow,
+              validatedData,
+              hiddenIds,
+            )
+          : await forkDefaultExpenseChild(
+              supabase,
+              user.id,
+              categoryRow,
+              validatedData,
+              hiddenIds,
+            );
+
+
+      if (forkResult.error || !forkResult.category) {
+        const msg = forkResult.error ?? "Failed to update category";
+        const code =
+          msg.includes("already exists") || msg.includes("duplicate")
+            ? "DUPLICATE_ERROR"
+            : msg.includes("Missing required table user_hidden_default_categories")
+              ? "SERVER_ERROR"
+            : msg === "Parent category not found"
+              ? "NOT_FOUND"
+              : msg.includes("Cannot ")
+                ? "VALIDATION_ERROR"
+                : "SERVER_ERROR";
+        const status =
+          code === "DUPLICATE_ERROR"
+            ? 409
+            : code === "NOT_FOUND"
+              ? 404
+              : code === "VALIDATION_ERROR"
+                ? 400
+                : 500;
+        return jsonError(status, msg, code);
+      }
+
+      return jsonSuccess({ category: forkResult.category }, "Category updated successfully");
     }
 
     // If parentCategoryId is being changed, verify it exists and is accessible
@@ -113,6 +160,9 @@ export async function PUT(
     }
     if (validatedData.parentCategoryId !== undefined) {
       updateData.parent_category_id = validatedData.parentCategoryId;
+    }
+    if (validatedData.icon !== undefined) {
+      updateData.icon = validatedData.icon;
     }
 
     // Update category
@@ -183,9 +233,19 @@ export async function DELETE(
 
     const deleteCategoryRow = category as ExpenseCategoryRow;
 
-    // Cannot delete default categories
     if (deleteCategoryRow.user_id === null) {
-      return jsonError(403, "Cannot delete default categories", "FORBIDDEN");
+      const del = await deleteExpenseCategoryByHidingDefault(supabase, user.id, deleteCategoryRow);
+      if (del.error) {
+        const code =
+          del.error.includes("transaction(s)") || del.error.includes("sub-categor")
+            ? del.error.includes("sub-categor")
+              ? "FOREIGN_KEY_ERROR"
+              : "FOREIGN_KEY_ERROR"
+            : "SERVER_ERROR";
+        const status = code === "FOREIGN_KEY_ERROR" ? 400 : 500;
+        return jsonError(status, del.error, code);
+      }
+      return jsonSuccess(null, "Category deleted successfully");
     }
 
     // Check if category has transactions
@@ -203,12 +263,11 @@ export async function DELETE(
       );
     }
 
-    // Check if category has child categories
+    // Check if category has child categories (any owner — default or custom)
     const { count: childCount } = await supabase
       .from("expense_categories")
       .select("*", { count: "exact", head: true })
-      .eq("parent_category_id", id)
-      .eq("user_id", user.id);
+      .eq("parent_category_id", id);
 
     if (childCount && childCount > 0) {
       return jsonError(

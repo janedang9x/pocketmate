@@ -28,6 +28,8 @@ import {
   OvertimeChart,
   ReportSummaryCard,
 } from "@/components/reports";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { displayIncomeReportCategoryName } from "@/lib/i18n/category-display-name";
 import { formatCurrency } from "@/lib/utils/account.utils";
 import type { IncomeCategory } from "@/types/category.types";
 import type { IncomeReportData } from "@/types/report.types";
@@ -55,6 +57,8 @@ function defaultRange(): { start: string; end: string } {
  * Income report dashboard (FR-RPT-002).
  */
 export default function IncomeReportPage() {
+  const { messages: m, locale } = useLocaleContext();
+  const r = m.reports;
   const initial = useMemo(() => defaultRange(), []);
   const [startDate, setStartDate] = useState(initial.start);
   const [endDate, setEndDate] = useState(initial.end);
@@ -129,7 +133,7 @@ export default function IncomeReportPage() {
   const breakdownItems =
     report?.byCategory.map((c) => ({
       id: c.categoryId,
-      name: c.categoryName,
+      name: displayIncomeReportCategoryName(c, locale, m),
       amount: c.amount,
       percentage: c.percentage,
       transactionCount: c.transactionCount,

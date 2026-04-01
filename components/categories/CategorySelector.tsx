@@ -1,21 +1,69 @@
 "use client";
 
-import { Controller } from "react-hook-form";
+import { useMemo } from "react";
+import { Plus } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { ExpenseCategory, ExpenseCategoryWithChildren, IncomeCategory } from "@/types/category.types";
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { SearchableSelect, type SearchableSelectItem } from "@/components/ui/searchable-select";
+import { SelectSeparator } from "@/components/ui/select";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { CategoryIcon } from "@/components/categories/CategoryIcon";
+import { localizedSeedCategoryName } from "@/lib/i18n/seed-category-labels";
+import type { Locale } from "@/lib/i18n/types";
+import type { ExpenseCategoryWithChildren, IncomeCategory } from "@/types/category.types";
 
-interface CategorySelectorProps {
-  control: any;
-  name: string;
+interface CategorySelectorProps<TFieldValues extends FieldValues> {
+  control: Control<TFieldValues>;
+  name: FieldPath<TFieldValues>;
   categories: ExpenseCategoryWithChildren[] | IncomeCategory[];
   type: "expense" | "income";
   placeholder?: string;
+  /** Opens inline create flow (e.g. dialog) without leaving the transaction form. */
+  onCreateNew?: () => void;
+}
+
+function buildExpenseItems(
+  expenseCategories: ExpenseCategoryWithChildren[],
+  locale: Locale,
+): SearchableSelectItem[] {
+  const out: SearchableSelectItem[] = [];
+  for (const parent of expenseCategories) {
+    const parentLabel = localizedSeedCategoryName(parent.name, parent.isDefault, locale, "expense");
+    out.push({
+      value: parent.id,
+      label: (
+        <span className="flex items-center gap-2 font-semibold">
+          <CategoryIcon icon={parent.icon} name={parent.name} kind="expense" />
+          {parentLabel}
+        </span>
+      ),
+      searchText: `${parent.name} ${parentLabel}`,
+    });
+    for (const child of parent.children) {
+      const childLabel = localizedSeedCategoryName(
+        child.name,
+        child.user_id === null,
+        locale,
+        "expense",
+      );
+      out.push({
+        value: child.id,
+        label: (
+          <span className="flex items-center gap-2 pl-6">
+            <CategoryIcon icon={child.icon} name={child.name} kind="expense" />
+            {childLabel}
+          </span>
+        ),
+        searchText: `${parent.name} ${child.name} ${parentLabel} ${childLabel}`,
+      });
+    }
+  }
+  return out;
 }
 
 /**
@@ -23,65 +71,77 @@ interface CategorySelectorProps {
  * Flat selector for income categories
  * Used in transaction forms
  */
-export function CategorySelector({
+export function CategorySelector<TFieldValues extends FieldValues>({
   control,
   name,
   categories,
   type,
   placeholder = "Select category",
-}: CategorySelectorProps) {
-  if (type === "expense") {
-    const expenseCategories = categories as ExpenseCategoryWithChildren[];
+  onCreateNew,
+}: CategorySelectorProps<TFieldValues>) {
+  const { messages: m, locale } = useLocaleContext();
+  const tf = m.transactionForm;
 
-    return (
-      <Controller
-        control={control}
-        name={name}
-        render={({ field }) => (
-          <Select onValueChange={field.onChange} value={field.value}>
-            <SelectTrigger>
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {expenseCategories.map((parent) => (
-                <div key={parent.id}>
-                  <SelectItem value={parent.id} className="font-semibold">
-                    {parent.name}
-                  </SelectItem>
-                  {parent.children.map((child) => (
-                    <SelectItem key={child.id} value={child.id} className="pl-6">
-                      {child.name}
-                    </SelectItem>
-                  ))}
-                </div>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      />
-    );
-  }
+  const items: SearchableSelectItem[] = useMemo(() => {
+    if (type === "expense") {
+      return buildExpenseItems(categories as ExpenseCategoryWithChildren[], locale);
+    }
+    return (categories as IncomeCategory[]).map((category) => {
+      const label = localizedSeedCategoryName(
+        category.name,
+        category.user_id === null,
+        locale,
+        "income",
+      );
+      return {
+        value: category.id,
+        label: (
+          <span className="flex items-center gap-2">
+            <CategoryIcon icon={category.icon} name={category.name} kind="income" />
+            {label}
+          </span>
+        ),
+        searchText: `${category.name} ${label}`,
+      };
+    });
+  }, [categories, type, locale]);
 
-  // Income categories (flat structure)
-  const incomeCategories = categories as IncomeCategory[];
+  const searchPlaceholder =
+    type === "expense" ? tf.searchExpenseCategories : tf.searchIncomeCategories;
 
   return (
     <Controller
       control={control}
       name={name}
       render={({ field }) => (
-        <Select onValueChange={field.onChange} value={field.value}>
-          <SelectTrigger>
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {incomeCategories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={field.value}
+          onChange={field.onChange}
+          items={items}
+          placeholder={placeholder}
+          searchPlaceholder={searchPlaceholder}
+          header={
+            onCreateNew ? (
+              <>
+                <div
+                  className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none"
+                  onPointerDown={(e) => e.preventDefault()}
+                >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-8 w-full justify-start gap-2 px-2 font-normal text-primary"
+                    onClick={onCreateNew}
+                  >
+                    <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                    {tf.createNewCategory}
+                  </Button>
+                </div>
+                <SelectSeparator className="mt-0" />
+              </>
+            ) : undefined
+          }
+        />
       )}
     />
   );

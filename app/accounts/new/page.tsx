@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccountForm } from "@/components/accounts/AccountForm";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
 import type { CreateAccountInput, UpdateAccountInput } from "@/lib/schemas/account.schema";
 
 type CreateResponse =
@@ -20,6 +21,8 @@ type CreateResponse =
 export default function NewAccountPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { messages: m } = useLocaleContext();
+  const a = m.accounts;
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateAccountInput) => {
@@ -36,11 +39,11 @@ export default function NewAccountPage() {
       const result = (await res.json()) as CreateResponse;
 
       if (!res.ok) {
-        throw new Error(result.success === false ? result.error : "Failed to create account");
+        throw new Error(result.success === false ? result.error : m.common.failedToLoad);
       }
 
       if (!result.success || !result.data?.account) {
-        throw new Error("Invalid response from server");
+        throw new Error(m.common.somethingWrong);
       }
 
       return result;
@@ -59,15 +62,13 @@ export default function NewAccountPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/accounts" aria-label="Back to accounts">
+          <Link href="/accounts" aria-label={a.backAria}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create Account</h1>
-          <p className="text-muted-foreground">
-            Add a new financial account. Opening balance is recorded as the first transaction.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{a.newTitle}</h1>
+          <p className="text-muted-foreground">{a.newSubtitle}</p>
         </div>
       </div>
 
@@ -76,7 +77,7 @@ export default function NewAccountPage() {
           <p className="text-sm font-medium text-destructive">
             {createMutation.error instanceof Error
               ? createMutation.error.message
-              : "Something went wrong"}
+              : a.createError}
           </p>
         </div>
       )}
@@ -84,7 +85,7 @@ export default function NewAccountPage() {
       <AccountForm
         onSubmit={handleSubmit}
         isLoading={createMutation.isPending}
-        submitLabel="Create Account"
+        submitLabel={a.createAccount}
       />
     </div>
   );

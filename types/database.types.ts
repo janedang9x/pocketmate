@@ -70,6 +70,7 @@ export type Database = {
       expense_categories: {
         Row: {
           created_at: string | null;
+          icon: string | null;
           id: string;
           name: string;
           parent_category_id: string | null;
@@ -77,6 +78,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string | null;
+          icon?: string | null;
           id?: string;
           name: string;
           parent_category_id?: string | null;
@@ -84,6 +86,7 @@ export type Database = {
         };
         Update: {
           created_at?: string | null;
+          icon?: string | null;
           id?: string;
           name?: string;
           parent_category_id?: string | null;
@@ -107,18 +110,21 @@ export type Database = {
       income_categories: {
         Row: {
           created_at: string | null;
+          icon: string | null;
           id: string;
           name: string;
           user_id: string | null;
         };
         Insert: {
           created_at?: string | null;
+          icon?: string | null;
           id?: string;
           name: string;
           user_id?: string | null;
         };
         Update: {
           created_at?: string | null;
+          icon?: string | null;
           id?: string;
           name?: string;
           user_id?: string | null;
@@ -126,6 +132,34 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "income_categories_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "user_account";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_hidden_default_categories: {
+        Row: {
+          category_id: string;
+          category_kind: "expense" | "income";
+          created_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          category_id: string;
+          category_kind: "expense" | "income";
+          created_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          category_id?: string;
+          category_kind?: "expense" | "income";
+          created_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_hidden_default_categories_user_id_fkey";
             columns: ["user_id"];
             referencedRelation: "user_account";
             referencedColumns: ["id"];

@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { CATEGORY_ICON_NAMES } from "@/lib/category-icons";
+
+const categoryIconSchema = z.enum(CATEGORY_ICON_NAMES);
 
 /**
  * Schema for creating a new expense category
@@ -11,6 +14,7 @@ export const createExpenseCategorySchema = z.object({
     .min(1, "Category name is required")
     .max(200, "Category name must be at most 200 characters"),
   parentCategoryId: z.string().min(1).nullable().optional(),
+  icon: categoryIconSchema.optional(),
 });
 
 export type CreateExpenseCategoryInput = z.infer<typeof createExpenseCategorySchema>;
@@ -27,6 +31,7 @@ export const updateExpenseCategorySchema = z.object({
     .max(200, "Category name must be at most 200 characters")
     .optional(),
   parentCategoryId: z.string().min(1).nullable().optional(),
+  icon: categoryIconSchema.optional(),
 });
 
 export type UpdateExpenseCategoryInput = z.infer<typeof updateExpenseCategorySchema>;
@@ -41,6 +46,7 @@ export const createIncomeCategorySchema = z.object({
     .trim()
     .min(1, "Category name is required")
     .max(200, "Category name must be at most 200 characters"),
+  icon: categoryIconSchema.optional(),
 });
 
 export type CreateIncomeCategoryInput = z.infer<typeof createIncomeCategorySchema>;
@@ -56,6 +62,7 @@ export const updateIncomeCategorySchema = z.object({
     .min(1, "Category name is required")
     .max(200, "Category name must be at most 200 characters")
     .optional(),
+  icon: categoryIconSchema.optional(),
 });
 
 export type UpdateIncomeCategoryInput = z.infer<typeof updateIncomeCategorySchema>;

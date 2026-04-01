@@ -126,6 +126,41 @@ Authenticate user and return session token.
 
 ---
 
+#### POST /api/auth/oauth-session
+
+Called by the browser after Google OAuth (`exchangeCodeForSession`) to validate tokens, set the same `pm_access_token` / `pm_refresh_token` cookies as password login, and ensure a `user_account` row exists.
+
+**Request Body:**
+
+```json
+{
+  "accessToken": "string (required)",
+  "refreshToken": "string (optional)"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "string | null"
+    }
+  },
+  "message": "Session established"
+}
+```
+
+**Errors:**
+
+- `400` - Validation error
+- `401` - Invalid or expired token
+
+---
+
 #### POST /api/auth/logout
 
 End user session.

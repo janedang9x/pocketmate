@@ -3,11 +3,12 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const geistMono = Geist_Mono({
@@ -36,7 +37,9 @@ export default function RootLayout({
         )}
       >
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <LocaleProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </LocaleProvider>
         </QueryProvider>
       </body>
     </html>

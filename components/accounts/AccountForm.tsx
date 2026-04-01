@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -12,12 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  createAccountSchema,
-  updateAccountSchema,
-  type CreateAccountInput,
-  type UpdateAccountInput,
-} from "@/lib/schemas/account.schema";
+import { buildCreateAccountSchema, buildUpdateAccountSchema } from "@/lib/i18n/zod/account-schemas";
+import { accountTypeLabel } from "@/lib/i18n/labels";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import type { CreateAccountInput, UpdateAccountInput } from "@/lib/schemas/account.schema";
 import { ACCOUNT_TYPES, CURRENCIES } from "@/types/account.types";
 import { getCurrencyLabel } from "@/lib/utils/account.utils";
 
@@ -43,10 +42,21 @@ export function AccountForm({
   mode = "create",
   submitLabel,
 }: AccountFormProps) {
+  const { messages: m } = useLocaleContext();
+  const a = m.accounts;
   const isEdit = mode === "edit";
 
+  const createSchema = useMemo(
+    () => buildCreateAccountSchema(m.validation.account),
+    [m.validation.account],
+  );
+  const updateSchema = useMemo(
+    () => buildUpdateAccountSchema(m.validation.account),
+    [m.validation.account],
+  );
+
   const form = useForm<AccountFormValues>({
-    resolver: zodResolver(isEdit ? updateAccountSchema : createAccountSchema),
+    resolver: zodResolver(isEdit ? updateSchema : createSchema),
     defaultValues: isEdit
       ? {
           name: (defaultValues as Partial<UpdateAccountInput>)?.name ?? "",
@@ -65,38 +75,33 @@ export function AccountForm({
     await onSubmit(values as CreateAccountInput & UpdateAccountInput);
   }
 
-  const buttonText = submitLabel ?? (isEdit ? "Save Changes" : "Create Account");
+  const buttonText =
+    submitLabel ?? (isEdit ? a.saveChanges : a.createAccount);
 
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Account Name</Label>
-        <Input
-          id="name"
-          placeholder="e.g. Main Checking Account"
-          {...form.register("name")}
-        />
+        <Label htmlFor="name">{a.accountName}</Label>
+        <Input id="name" placeholder={a.placeholders.name} {...form.register("name")} />
         {form.formState.errors.name?.message ? (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.name.message}
-          </p>
+          <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
         ) : null}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">Account Type</Label>
+        <Label htmlFor="type">{a.accountType}</Label>
         <Controller
           control={form.control}
           name="type"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger id="type">
-                <SelectValue placeholder="Select account type" />
+                <SelectValue placeholder={a.placeholders.selectType} />
               </SelectTrigger>
               <SelectContent>
                 {ACCOUNT_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
-                    {type}
+                    {accountTypeLabel(type, m.accountTypes)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -104,23 +109,21 @@ export function AccountForm({
           )}
         />
         {form.formState.errors.type?.message ? (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.type.message}
-          </p>
+          <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>
         ) : null}
       </div>
 
       {!isEdit && (
         <>
           <div className="space-y-2">
-            <Label htmlFor="currency">Currency</Label>
+            <Label htmlFor="currency">{a.currency}</Label>
             <Controller
               control={form.control}
               name="currency"
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger id="currency">
-                    <SelectValue placeholder="Select currency" />
+                    <SelectValue placeholder={a.placeholders.selectCurrency} />
                   </SelectTrigger>
                   <SelectContent>
                     {CURRENCIES.map((currency) => (
@@ -140,12 +143,12 @@ export function AccountForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="openingBalance">Opening Balance</Label>
+            <Label htmlFor="openingBalance">{a.openingBalance}</Label>
             <Input
               id="openingBalance"
               type="number"
               step="0.01"
-              placeholder="0.00"
+              placeholder={a.placeholders.opening}
               {...form.register("openingBalance", { valueAsNumber: true })}
             />
             {(form.formState.errors as { openingBalance?: { message?: string } }).openingBalance
@@ -162,7 +165,7 @@ export function AccountForm({
       )}
 
       <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Saving..." : buttonText}
+        {isLoading ? m.common.saving : buttonText}
       </Button>
     </form>
   );

@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { accountTypeLabel } from "@/lib/i18n/labels";
 import { AccountTypeIcon } from "./AccountTypeIcon";
 import type { AccountWithBalance, Currency } from "@/types/account.types";
 import { getCurrencyLabel } from "@/lib/utils/account.utils";
@@ -15,6 +19,8 @@ interface AccountCardProps {
  * Implements FR-ACC-002: View Financial Accounts
  */
 export function AccountCard({ account, exchangeRates = null }: AccountCardProps) {
+  const { messages: m } = useLocaleContext();
+
   const formatAmount = (value: number, curr: Currency): string => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: curr === "VND" ? 0 : 2,
@@ -44,7 +50,9 @@ export function AccountCard({ account, exchangeRates = null }: AccountCardProps)
             {/* Account info */}
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-lg text-foreground truncate">{account.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{account.type}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {accountTypeLabel(account.type, m.accountTypes)}
+              </p>
               
               {/* Balance and Currency */}
               <div className="mt-4 flex items-start justify-between gap-2">

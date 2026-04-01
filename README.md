@@ -41,6 +41,7 @@ Visit http://localhost:3000
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (API rate limiting; see `.env.local.example`)
 
 2. Apply schema and RLS policies (see `docs/database-schema.md`):
 
@@ -75,12 +76,22 @@ supabase gen types typescript --project-id <project-id> --schema public > types/
 - `docs/` – requirements, database schema, API design
 - `TODO.md` – sprint plan (Phase 1.1 & 1.2)
 
+## API rate limiting
+
+All `/api/*` routes are rate-limited in middleware using [Upstash](https://upstash.com) (sliding window per client IP):
+
+- **100 requests / minute** for most API routes
+- **10 requests / minute** for `POST /api/auth/login`, `POST /api/auth/register`, and `POST /api/auth/oauth-session`
+
+Over the limit returns **429** with `{ "success": false, "code": "RATE_LIMIT", ... }` and a `Retry-After` header. If Upstash env vars are omitted, limits are disabled (useful for local work without Redis).
+
 ## NPM scripts
 
 - `npm run dev` – start dev server
 - `npm run build` – production build
 - `npm run start` – run built app
 - `npm run lint` – run ESLint
+- `npm test` – Vitest (rate limit helpers + optional Upstash integration when credentials exist)
 
 ## Next steps (per TODO.md)
 

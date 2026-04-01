@@ -7,21 +7,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  createBorrowTransactionSchema,
-  createExpenseTransactionSchema,
-  createIncomeTransactionSchema,
-  createTransferTransactionSchema,
-  createTransactionSchema,
-  type CreateTransactionInput,
-} from "@/lib/schemas/transaction.schema";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { transactionTabLabel } from "@/lib/i18n/labels";
+import { buildCreateTransactionSchemas } from "@/lib/i18n/zod/transaction-schemas";
+import { localizedSeedCategoryName } from "@/lib/i18n/seed-category-labels";
+import type { CreateTransactionInput } from "@/lib/schemas/transaction.schema";
 import type { AccountWithBalance } from "@/types/account.types";
 import type { Currency } from "@/types/account.types";
 import type { Counterparty } from "@/types/counterparty.types";
 import type { ExpenseCategoryWithChildren, IncomeCategory } from "@/types/category.types";
 import type { TransactionType } from "@/types/transaction.types";
 import { CategorySelector } from "@/components/categories/CategorySelector";
+import { CategoryIcon } from "@/components/categories/CategoryIcon";
 import { CounterpartySelector } from "@/components/counterparties/CounterpartySelector";
+import { AccountSelect } from "@/components/transactions/AccountSelect";
+import { useTransactionInlineCreate } from "@/components/transactions/useTransactionInlineCreate";
 import { getCurrencyLabel } from "@/lib/utils/account.utils";
 import { getLatestVndExchangeRates, type VndExchangeRates } from "@/lib/utils/exchange-rate.utils";
 
@@ -42,6 +42,16 @@ interface TransactionFormProps {
    * Used for edit flows to prevent changing transaction type (FR-TXN-006).
    */
   disableTypeChange?: boolean;
+  /**
+   * Preferred account id from the latest transaction.
+   * Used to auto-fill account selectors on create flow.
+   */
+  latestTransactionAccountId?: string;
+  /**
+   * Top expense category ids ordered by usage frequency (desc).
+   * Used for quick-select chips in Expense tab.
+   */
+  mostUsedExpenseCategoryIds?: string[];
 }
 
 type TransactionTab = "Expense" | "Income" | "Transfer" | "Borrow" | "Lend";
@@ -160,7 +170,17 @@ export function TransactionForm({
   isSubmitting = false,
   defaultValues,
   disableTypeChange = false,
+  latestTransactionAccountId,
+  mostUsedExpenseCategoryIds = [],
 }: TransactionFormProps) {
+  const { messages: m, locale } = useLocaleContext();
+  const tf = m.transactionForm;
+
+  const transactionSchemas = useMemo(
+    () => buildCreateTransactionSchemas(m.validation.transaction),
+    [m.validation.transaction],
+  );
+
   const initialType: TransactionType = defaultValues?.type ?? "Expense";
 
   const initialTab: TransactionTab =
@@ -179,7 +199,7 @@ export function TransactionForm({
   const autoFilledSideRef = useRef<"source" | "destination" | null>(null);
 
   const form = useForm<CreateTransactionInput>({
-    resolver: zodResolver(createTransactionSchema),
+    resolver: zodResolver(transactionSchemas.createTransactionSchema),
     defaultValues: {
       type: initialType,
       amount: 0,
@@ -191,12 +211,81 @@ export function TransactionForm({
     mode: "onTouched",
   });
 
+  const preferredAutoAccountId = useMemo(() => {
+    if (accounts.length === 0) return undefined;
+    if (accounts.length === 1) return accounts[0]?.id;
+    return latestTransactionAccountId;
+  }, [accounts, latestTransactionAccountId]);
+
+  const inlineCreate = useTransactionInlineCreate({
+    form,
+    expenseCategories,
+  });
+
   const watchAmount = form.watch("amount");
   const watchDestinationAmount = form.watch("destinationAmount" as any);
   const watchFromAccountId = form.watch("fromAccountId");
   const watchToAccountId = form.watch("toAccountId");
   const watchType = form.watch("type");
+  const watchExpenseCategoryId = form.watch("expenseCategoryId" as any);
   const isTransfer = (watchType as TransactionType) === "Transfer";
+
+  const expenseCategoryLookup = useMemo(() => {
+    const entries = expenseCategories.flatMap((parent) => {
+      const parentLabel = localizedSeedCategoryName(parent.name, parent.isDefault, locale, "expense");
+      const parentEntry = [
+        parent.id,
+        {
+          id: parent.id,
+          name: parentLabel,
+          icon: parent.icon,
+        },
+      ] as const;
+      const childEntries = parent.children.map((child) => {
+        const childLabel = localizedSeedCategoryName(
+          child.name,
+          child.user_id === null,
+          locale,
+          "expense",
+        );
+        return [
+          child.id,
+          {
+            id: child.id,
+            name: childLabel,
+            icon: child.icon,
+          },
+        ] as const;
+      });
+      return [parentEntry, ...childEntries];
+    });
+    return new Map(entries);
+  }, [expenseCategories, locale]);
+
+  const mostUsedExpenseCategories = useMemo(() => {
+    const fromMostUsed = mostUsedExpenseCategoryIds
+      .map((id) => expenseCategoryLookup.get(id))
+      .filter((category): category is { id: string; name: string; icon?: string | null } => Boolean(category))
+      .slice(0, 4);
+
+    const selectedIds = new Set(fromMostUsed.map((category) => category.id));
+    const fallbackNames = ["Groceries", "Household Supplies", "Fuel"];
+
+    const fallbackCategories = fallbackNames
+      .map((fallbackName) =>
+        expenseCategories
+          .flatMap((parent) => [parent, ...parent.children])
+          .find((category) => category.name === fallbackName),
+      )
+      .filter((category): category is { id: string; name: string; icon?: string | null; user_id?: string | null } =>
+        Boolean(category),
+      )
+      .map((category) => expenseCategoryLookup.get(category.id))
+      .filter((category): category is { id: string; name: string; icon?: string | null } => Boolean(category))
+      .filter((category) => !selectedIds.has(category.id));
+
+    return [...fromMostUsed, ...fallbackCategories].slice(0, 4);
+  }, [mostUsedExpenseCategoryIds, expenseCategoryLookup, expenseCategories]);
 
   async function handleSubmit(values: CreateTransactionInput) {
     await onSubmit(values);
@@ -301,6 +390,38 @@ export function TransactionForm({
     }
   }, [watchFromAccountId, watchToAccountId, watchType, accounts, form]);
 
+  useEffect(() => {
+    // Keep edit forms untouched; auto-fill is for create flow.
+    if (defaultValues) return;
+    if (!preferredAutoAccountId) return;
+
+    const currentType = watchType as TransactionType;
+
+    const setIfEmpty = (field: "fromAccountId" | "toAccountId") => {
+      const currentValue = form.getValues(field);
+      if (!currentValue) {
+        form.setValue(field, preferredAutoAccountId, {
+          shouldDirty: false,
+          shouldTouch: false,
+          shouldValidate: false,
+        });
+      }
+    };
+
+    if (currentType === "Income" || (currentType === "Borrow" && activeTab === "Borrow")) {
+      setIfEmpty("toAccountId");
+      return;
+    }
+
+    if (
+      currentType === "Expense" ||
+      currentType === "Transfer" ||
+      (currentType === "Borrow" && activeTab === "Lend")
+    ) {
+      setIfEmpty("fromAccountId");
+    }
+  }, [activeTab, watchType, preferredAutoAccountId, defaultValues, form]);
+
   const fromAccount =
     (watchType as TransactionType) === "Transfer" && watchFromAccountId
       ? accounts.find((a) => a.id === watchFromAccountId) ?? null
@@ -381,7 +502,9 @@ export function TransactionForm({
         : (watchType as TransactionType) === "Transfer"
           ? fromAccount?.currency ?? toAccount?.currency
           : (watchType as TransactionType) === "Borrow"
-            ? accounts.find((a) => a.id === (watchToAccountId || watchFromAccountId))?.currency
+            ? activeTab === "Lend"
+              ? accounts.find((a) => a.id === watchFromAccountId)?.currency
+              : accounts.find((a) => a.id === watchToAccountId)?.currency
             : undefined;
 
   useEffect(() => {
@@ -437,7 +560,7 @@ export function TransactionForm({
                 aria-disabled={isDisabled}
                 className={isDisabled ? "pointer-events-none opacity-60" : ""}
               >
-                {tab}
+                {transactionTabLabel(tab, tf.tabs)}
               </TabsTrigger>
             );
           })}
@@ -445,7 +568,7 @@ export function TransactionForm({
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="dateTime">Date &amp; Time</Label>
+            <Label htmlFor="dateTime">{tf.dateTime}</Label>
             <Input
               id="dateTime"
               type="datetime-local"
@@ -461,7 +584,12 @@ export function TransactionForm({
           {!isTransfer || !hasDifferentCurrencies ? (
             <div className="space-y-2">
               <Label htmlFor="amount">
-                Amount ({amountCurrencyLabel ?? "Currency"})
+                {amountCurrencyLabel
+                  ? tf.amountWithCurrency.replace(
+                      "{currency}",
+                      getCurrencyLabel(amountCurrencyLabel as Currency),
+                    )
+                  : tf.amount}
               </Label>
               <Controller
                 control={form.control}
@@ -493,24 +621,18 @@ export function TransactionForm({
         <TabsContent value="Expense" className="mt-4 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="fromAccountId">From Account</Label>
+              <Label htmlFor="fromAccountId">{tf.fromAccount}</Label>
               <Controller
                 control={form.control}
                 name="fromAccountId"
                 render={({ field }) => (
-                  <select
+                  <AccountSelect
                     id="fromAccountId"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={field.value}
                     onChange={field.onChange}
-                    value={field.value ?? ""}
-                  >
-                    <option value="">Select account</option>
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name}
-                      </option>
-                    ))}
-                  </select>
+                    accounts={accounts}
+                    onRequestCreate={() => inlineCreate.openCreateAccount("fromAccountId")}
+                  />
                 )}
               />
               {(form.formState.errors as { fromAccountId?: { message?: string } }).fromAccountId
@@ -525,14 +647,44 @@ export function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Expense Category</Label>
+              <Label>{tf.expenseCategory}</Label>
               <CategorySelector
                 control={form.control}
                 name="expenseCategoryId"
                 categories={expenseCategories}
                 type="expense"
-                placeholder="Select expense category"
+                placeholder={tf.phExpenseCategory}
+                onCreateNew={inlineCreate.openCreateExpenseCategory}
               />
+              {mostUsedExpenseCategories.length > 0 ? (
+                <div className="space-y-2 pt-1">
+                  <p className="text-xs text-muted-foreground">{tf.mostUsedExpenseCategories}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {mostUsedExpenseCategories.map((category) => {
+                      const isSelected = watchExpenseCategoryId === category.id;
+                      return (
+                        <Button
+                          key={category.id}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          className="h-8 gap-1.5"
+                          onClick={() =>
+                            form.setValue("expenseCategoryId" as any, category.id, {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                              shouldValidate: true,
+                            })
+                          }
+                        >
+                          <CategoryIcon icon={category.icon} name={category.name} kind="expense" />
+                          <span className="max-w-[180px] truncate">{category.name}</span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
               {(form.formState.errors as { expenseCategoryId?: { message?: string } })
                 .expenseCategoryId?.message ? (
                 <p className="text-sm text-destructive">
@@ -545,13 +697,14 @@ export function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Counterparty (optional)</Label>
+              <Label>{tf.counterpartyOptional}</Label>
               <CounterpartySelector
                 control={form.control}
                 name="counterpartyId"
                 counterparties={counterparties}
-                placeholder="Select counterparty"
+                placeholder={tf.phCounterparty}
                 allowNone
+                onCreateNew={inlineCreate.openCreateCounterparty}
               />
             </div>
 
@@ -565,24 +718,18 @@ export function TransactionForm({
         <TabsContent value="Income" className="mt-4 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="toAccountId">To Account</Label>
+              <Label htmlFor="toAccountId">{tf.toAccount}</Label>
               <Controller
                 control={form.control}
                 name="toAccountId"
                 render={({ field }) => (
-                  <select
+                  <AccountSelect
                     id="toAccountId"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={field.value}
                     onChange={field.onChange}
-                    value={field.value ?? ""}
-                  >
-                    <option value="">Select account</option>
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name}
-                      </option>
-                    ))}
-                  </select>
+                    accounts={accounts}
+                    onRequestCreate={() => inlineCreate.openCreateAccount("toAccountId")}
+                  />
                 )}
               />
               {(form.formState.errors as { toAccountId?: { message?: string } }).toAccountId
@@ -597,13 +744,14 @@ export function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Income Category</Label>
+              <Label>{tf.incomeCategory}</Label>
               <CategorySelector
                 control={form.control}
                 name="incomeCategoryId"
                 categories={incomeCategories}
                 type="income"
-                placeholder="Select income category"
+                placeholder={tf.phIncomeCategory}
+                onCreateNew={inlineCreate.openCreateIncomeCategory}
               />
               {(form.formState.errors as { incomeCategoryId?: { message?: string } })
                 .incomeCategoryId?.message ? (
@@ -617,13 +765,14 @@ export function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Counterparty (optional)</Label>
+              <Label>{tf.counterpartyOptional}</Label>
               <CounterpartySelector
                 control={form.control}
                 name="counterpartyId"
                 counterparties={counterparties}
-                placeholder="Select counterparty"
+                placeholder={tf.phCounterparty}
                 allowNone
+                onCreateNew={inlineCreate.openCreateCounterparty}
               />
             </div>
           </div>
@@ -632,24 +781,19 @@ export function TransactionForm({
         <TabsContent value="Transfer" className="mt-4 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="fromAccountId-transfer">From Account</Label>
+              <Label htmlFor="fromAccountId-transfer">{tf.fromAccount}</Label>
               <Controller
                 control={form.control}
                 name="fromAccountId"
                 render={({ field }) => (
-                  <select
+                  <AccountSelect
                     id="fromAccountId-transfer"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={field.value}
                     onChange={field.onChange}
-                    value={field.value ?? ""}
-                  >
-                    <option value="">Select account</option>
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name} ({getCurrencyLabel(account.currency as Currency)})
-                      </option>
-                    ))}
-                  </select>
+                    accounts={accounts}
+                    showCurrencyLabel
+                    onRequestCreate={() => inlineCreate.openCreateAccount("fromAccountId")}
+                  />
                 )}
               />
               {(form.formState.errors as { fromAccountId?: { message?: string } }).fromAccountId
@@ -664,24 +808,19 @@ export function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="toAccountId-transfer">To Account</Label>
+              <Label htmlFor="toAccountId-transfer">{tf.toAccount}</Label>
               <Controller
                 control={form.control}
                 name="toAccountId"
                 render={({ field }) => (
-                  <select
+                  <AccountSelect
                     id="toAccountId-transfer"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={field.value}
                     onChange={field.onChange}
-                    value={field.value ?? ""}
-                  >
-                    <option value="">Select account</option>
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name} ({getCurrencyLabel(account.currency as Currency)})
-                      </option>
-                    ))}
-                  </select>
+                    accounts={accounts}
+                    showCurrencyLabel
+                    onRequestCreate={() => inlineCreate.openCreateAccount("toAccountId")}
+                  />
                 )}
               />
               {(form.formState.errors as { toAccountId?: { message?: string } }).toAccountId
@@ -699,7 +838,12 @@ export function TransactionForm({
               <>
                 <div className="space-y-2">
                   <Label htmlFor="amount">
-                    Amount ({fromAccount ? getCurrencyLabel(fromAccount.currency as Currency) : "source currency"})
+                    {tf.amountWithCurrency.replace(
+                      "{currency}",
+                      fromAccount
+                        ? getCurrencyLabel(fromAccount.currency as Currency)
+                        : tf.sourceCurrency,
+                    )}
                   </Label>
                   <Controller
                     control={form.control}
@@ -746,7 +890,12 @@ export function TransactionForm({
 
                 <div className="space-y-2">
                   <Label htmlFor="destinationAmount">
-                    Amount ({toAccount ? getCurrencyLabel(toAccount.currency as Currency) : "destination currency"})
+                    {tf.amountWithCurrency.replace(
+                      "{currency}",
+                      toAccount
+                        ? getCurrencyLabel(toAccount.currency as Currency)
+                        : tf.destinationCurrency,
+                    )}
                   </Label>
                   <Controller
                     control={form.control}
@@ -789,7 +938,7 @@ export function TransactionForm({
                 <div className="space-y-1 md:col-span-2">
                   {preferredDirection && preferredDirectionRate && preferredDirectionRate > 0 ? (
                     <p className="text-xs text-muted-foreground">
-                      Exchange rate:{" "}
+                      {tf.exchangeRateLine}{" "}
                       <span className="font-medium">
                         1 {getCurrencyLabel(preferredDirection.base)} ={" "}
                         {preferredDirectionRate.toFixed(4)}{" "}
@@ -797,9 +946,7 @@ export function TransactionForm({
                       </span>
                     </p>
                   ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Enter an amount to see the exchange rate.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{tf.enterAmountForRate}</p>
                   )}
                 </div>
               </>
@@ -807,9 +954,7 @@ export function TransactionForm({
 
             {!hasDifferentCurrencies && (
               <div className="space-y-2 md:col-span-2">
-                <p className="text-xs text-muted-foreground">
-                  Accounts use the same currency, so only one amount is required.
-                </p>
+                <p className="text-xs text-muted-foreground">{tf.sameCurrencyHint}</p>
               </div>
             )}
           </div>
@@ -818,26 +963,18 @@ export function TransactionForm({
         <TabsContent value="Borrow" className="mt-4 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="borrow-account">
-                To Account
-              </Label>
+              <Label htmlFor="borrow-account">{tf.toAccount}</Label>
               <Controller
                 control={form.control}
                 name="toAccountId"
                 render={({ field }) => (
-                  <select
+                  <AccountSelect
                     id="borrow-account"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={field.value}
                     onChange={field.onChange}
-                    value={field.value ?? ""}
-                  >
-                    <option value="">Select account</option>
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name}
-                      </option>
-                    ))}
-                  </select>
+                    accounts={accounts}
+                    onRequestCreate={() => inlineCreate.openCreateAccount("toAccountId")}
+                  />
                 )}
               />
               {(form.formState.errors as { toAccountId?: { message?: string } })["toAccountId"]?.message ? (
@@ -850,13 +987,14 @@ export function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Counterparty</Label>
+              <Label>{tf.counterparty}</Label>
               <CounterpartySelector
                 control={form.control}
                 name="counterpartyId"
                 counterparties={counterparties}
-                placeholder="Select counterparty"
+                placeholder={tf.phCounterparty}
                 allowNone={false}
+                onCreateNew={inlineCreate.openCreateCounterparty}
               />
               {(form.formState.errors as { counterpartyId?: { message?: string } })
                 .counterpartyId?.message ? (
@@ -874,26 +1012,18 @@ export function TransactionForm({
         <TabsContent value="Lend" className="mt-4 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="lend-account">
-                From Account
-              </Label>
+              <Label htmlFor="lend-account">{tf.fromAccount}</Label>
               <Controller
                 control={form.control}
                 name="fromAccountId"
                 render={({ field }) => (
-                  <select
+                  <AccountSelect
                     id="lend-account"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={field.value}
                     onChange={field.onChange}
-                    value={field.value ?? ""}
-                  >
-                    <option value="">Select account</option>
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name}
-                      </option>
-                    ))}
-                  </select>
+                    accounts={accounts}
+                    onRequestCreate={() => inlineCreate.openCreateAccount("fromAccountId")}
+                  />
                 )}
               />
               {(form.formState.errors as { fromAccountId?: { message?: string } })["fromAccountId"]?.message ? (
@@ -906,13 +1036,14 @@ export function TransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Counterparty</Label>
+              <Label>{tf.counterparty}</Label>
               <CounterpartySelector
                 control={form.control}
                 name="counterpartyId"
                 counterparties={counterparties}
-                placeholder="Select counterparty"
+                placeholder={tf.phCounterparty}
                 allowNone={false}
+                onCreateNew={inlineCreate.openCreateCounterparty}
               />
               {(form.formState.errors as { counterpartyId?: { message?: string } })
                 .counterpartyId?.message ? (
@@ -929,11 +1060,11 @@ export function TransactionForm({
       </Tabs>
 
       <div className="space-y-2">
-        <Label htmlFor="details">Notes / Details</Label>
+        <Label htmlFor="details">{tf.notesDetails}</Label>
         <textarea
           id="details"
           className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          placeholder="Optional note about this transaction"
+          placeholder={tf.notesPlaceholder}
           {...form.register("details")}
         />
         {form.formState.errors.details?.message ? (
@@ -945,9 +1076,11 @@ export function TransactionForm({
 
       <div className="pt-2">
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Transaction"}
+          {isSubmitting ? tf.saving : tf.saveTransaction}
         </Button>
       </div>
+
+      {inlineCreate.dialogs}
     </form>
   );
 }

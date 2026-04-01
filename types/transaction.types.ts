@@ -23,6 +23,14 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export type TransactionRow = Database["public"]["Tables"]["transaction"]["Row"];
 
 /**
+ * Transaction row as returned by list APIs that join category names for display.
+ */
+export type TransactionRowWithCategoryNames = TransactionRow & {
+  expense_category_name?: string | null;
+  income_category_name?: string | null;
+};
+
+/**
  * Transaction entity exposed via API
  * Mirrors TransactionRow but with camelCased field names for frontend usage.
  */

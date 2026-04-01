@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AccountCard } from "@/components/accounts/AccountCard";
+import { useLocaleContext } from "@/components/providers/LocaleProvider";
+import { accountTypeLabel } from "@/lib/i18n/labels";
 import { ACCOUNT_TYPES } from "@/types/account.types";
 import type { AccountWithBalance, Currency } from "@/types/account.types";
 import type { VndExchangeRates } from "@/lib/utils/exchange-rate.utils";
@@ -41,6 +43,9 @@ type AccountsResponse =
  * @see docs/specifications.md#fr-acc-002-view-financial-accounts
  */
 export default function AccountsPage() {
+  const { messages: m } = useLocaleContext();
+  const a = m.accounts;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
@@ -66,7 +71,7 @@ export default function AccountsPage() {
 
       if (!res.ok) {
         const errorData = (await res.json().catch(() => null)) as AccountsResponse | null;
-        throw new Error(errorData?.success === false ? errorData.error : "Failed to fetch accounts");
+        throw new Error(errorData?.success === false ? errorData.error : m.common.failedToLoad);
       }
 
       return (await res.json()) as AccountsResponse;
@@ -90,15 +95,13 @@ export default function AccountsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
-          <p className="text-muted-foreground">
-            Manage your financial accounts and track balances
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{a.pageTitle}</h1>
+          <p className="text-muted-foreground">{a.pageSubtitle}</p>
         </div>
         <Button asChild>
           <Link href="/accounts/new">
             <Plus className="mr-2 h-4 w-4" />
-            Add Account
+            {a.addAccount}
           </Link>
         </Button>
       </div>
@@ -108,7 +111,7 @@ export default function AccountsPage() {
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total balance (all accounts)</p>
+              <p className="text-sm font-medium text-muted-foreground">{a.totalBalanceLabel}</p>
               <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
                 {isLoading
                   ? "--"
@@ -117,9 +120,7 @@ export default function AccountsPage() {
                     : "--"}
               </p>
               {totalBalanceVnd === null && !isLoading && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Exchange rates unavailable, cannot convert all currencies to VND.
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{m.common.exchangeRatesUnavailable}</p>
               )}
             </div>
             <div className="rounded-lg bg-primary p-2.5 text-primary-foreground">
@@ -134,7 +135,7 @@ export default function AccountsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search accounts by name..."
+            placeholder={a.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -144,13 +145,13 @@ export default function AccountsPage() {
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger>
               <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Filter by type" />
+              <SelectValue placeholder={a.filterType} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">{a.allTypes}</SelectItem>
               {ACCOUNT_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
-                  {type}
+                  {accountTypeLabel(type, m.accountTypes)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -162,20 +163,20 @@ export default function AccountsPage() {
       {isLoading && !data && (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <div className="mb-2 text-muted-foreground">Loading accounts...</div>
+            <div className="mb-2 text-muted-foreground">{a.loading}</div>
           </div>
         </div>
       )}
 
       {isFetching && data && (
-        <p className="text-sm text-muted-foreground">Refreshing accounts...</p>
+        <p className="text-sm text-muted-foreground">{a.refreshing}</p>
       )}
 
       {/* Error State */}
       {error && (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
           <p className="text-sm font-medium text-destructive">
-            Error loading accounts: {error instanceof Error ? error.message : "Unknown error"}
+            {a.errorPrefix} {error instanceof Error ? error.message : m.common.unknownError}
           </p>
         </div>
       )}
@@ -185,17 +186,15 @@ export default function AccountsPage() {
         <>
           {accounts.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12">
-              <p className="mb-2 text-lg font-medium">No accounts found</p>
+              <p className="mb-2 text-lg font-medium">{a.emptyTitle}</p>
               <p className="mb-4 text-sm text-muted-foreground">
-                {searchQuery || typeFilter !== "all"
-                  ? "Try adjusting your filters"
-                  : "Get started by creating your first account"}
+                {searchQuery || typeFilter !== "all" ? a.emptyFiltered : a.emptyNew}
               </p>
               {!searchQuery && typeFilter === "all" && (
                 <Button asChild>
                   <Link href="/accounts/new">
                     <Plus className="mr-2 h-4 w-4" />
-                    Create Account
+                    {a.createAccount}
                   </Link>
                 </Button>
               )}
