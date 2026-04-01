@@ -36,6 +36,7 @@ import {
   createExpenseCategorySchema,
   createIncomeCategorySchema,
 } from "@/lib/schemas/category.schema";
+import type { CategoryIconName } from "@/lib/category-icons";
 import type { CreateTransactionInput } from "@/lib/schemas/transaction.schema";
 import type { ExpenseCategoryWithChildren } from "@/types/category.types";
 
@@ -54,12 +55,12 @@ function authHeaders(): HeadersInit {
 type QuickExpenseCategoryForm = {
   name: string;
   parentCategoryId?: string;
-  icon: string;
+  icon: CategoryIconName;
 };
 
 type QuickIncomeCategoryForm = {
   name: string;
-  icon: string;
+  icon: CategoryIconName;
 };
 
 type QuickCounterpartyForm = {

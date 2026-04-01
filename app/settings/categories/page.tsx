@@ -35,6 +35,7 @@ import { useLocaleContext } from "@/components/providers/LocaleProvider";
 import { incomeCategoryDisplayName } from "@/lib/i18n/category-display-name";
 import { localizedSeedCategoryName } from "@/lib/i18n/seed-category-labels";
 import { buildCategorySchemas } from "@/lib/i18n/zod/category-schemas";
+import { isCategoryIconName } from "@/lib/category-icons";
 import type { Locale } from "@/lib/i18n/types";
 import type {
   CreateExpenseCategoryInput,
@@ -760,7 +761,7 @@ function ExpenseCategoryDialog({
       ? {
           name: category.name,
           parentCategoryId: category.parent_category_id || null,
-          icon: category.icon ?? undefined,
+          icon: isCategoryIconName(category.icon) ? category.icon : undefined,
         }
       : {
           name: "",
@@ -903,7 +904,7 @@ function IncomeCategoryDialog({
     defaultValues: isEdit
       ? {
           name: category.name,
-          icon: category.icon ?? undefined,
+          icon: isCategoryIconName(category.icon) ? category.icon : undefined,
         }
       : {
           name: "",

@@ -265,7 +265,7 @@ export function TransactionForm({
   const mostUsedExpenseCategories = useMemo(() => {
     const fromMostUsed = mostUsedExpenseCategoryIds
       .map((id) => expenseCategoryLookup.get(id))
-      .filter((category): category is { id: string; name: string; icon?: string | null } => Boolean(category))
+      .filter((category): category is NonNullable<typeof category> => Boolean(category))
       .slice(0, 4);
 
     const selectedIds = new Set(fromMostUsed.map((category) => category.id));
@@ -277,11 +277,9 @@ export function TransactionForm({
           .flatMap((parent) => [parent, ...parent.children])
           .find((category) => category.name === fallbackName),
       )
-      .filter((category): category is { id: string; name: string; icon?: string | null; user_id?: string | null } =>
-        Boolean(category),
-      )
+      .filter((category): category is NonNullable<typeof category> => Boolean(category))
       .map((category) => expenseCategoryLookup.get(category.id))
-      .filter((category): category is { id: string; name: string; icon?: string | null } => Boolean(category))
+      .filter((category): category is NonNullable<typeof category> => Boolean(category))
       .filter((category) => !selectedIds.has(category.id));
 
     return [...fromMostUsed, ...fallbackCategories].slice(0, 4);
