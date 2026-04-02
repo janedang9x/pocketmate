@@ -137,6 +137,7 @@ export default function ExpenseReportPage() {
   }
 
   const formatAmount = (n: number) => formatCurrency(n, "VND");
+  const VND_THOUSAND_UNIT = 1000;
 
   const breakdownItems =
     report?.byCategory.map((c) => ({
@@ -198,7 +199,7 @@ export default function ExpenseReportPage() {
         </div>
       </div>
 
-      <FilterPanel>
+      <FilterPanel defaultCollapsed>
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
             <Label className="text-xs text-muted-foreground">{r.dateRange}</Label>
@@ -304,10 +305,10 @@ export default function ExpenseReportPage() {
 
           <OvertimeChart
             title={r.expenseOverTime}
-            description={r.expenseOverTimeDesc}
+            description={`${r.expenseOverTimeDesc} · Unit: 1,000 VND`}
             data={overtimeData}
             variant={chartVariant}
-            formatYAxis={(v) => formatAmount(v)}
+            formatYAxis={(v) => (v / VND_THOUSAND_UNIT).toLocaleString()}
             formatTooltip={(v) => formatAmount(v)}
           />
         </>

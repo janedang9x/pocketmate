@@ -235,6 +235,7 @@ export const catalogVi = {
     incomeMinusExpense: "Thu - chi (tháng này)",
     topExpenseTitle: "Danh mục chi nhiều nhất",
     topExpenseDesc: "Các danh mục chi cao nhất trong tháng",
+    viewDetails: "Xem chi tiết",
     yourAccounts: "Tài khoản của bạn",
     yourAccountsDesc: "Tài khoản có số dư cao nhất",
     viewAll: "Xem tất cả",

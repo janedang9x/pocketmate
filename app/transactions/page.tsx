@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Plus, Search, Filter, Calendar, ArrowUpDown } from "lucide-react";
@@ -114,6 +114,7 @@ function TransactionsLoadingFallback() {
 function TransactionsPageInner() {
   const { messages: m, locale } = useLocaleContext();
   const t = m.transactions;
+  const router = useRouter();
   const searchParams = useSearchParams();
   const hydratedFromUrl = useRef(false);
 
@@ -148,6 +149,11 @@ function TransactionsPageInner() {
     }
 
     const counterpartyId = searchParams.get("counterpartyId");
+    const accountId = searchParams.get("accountId");
+    if (accountId) {
+      setAccountFilter(accountId);
+    }
+
     if (counterpartyId) {
       setCounterpartyFilter(counterpartyId);
     }
@@ -671,15 +677,14 @@ function TransactionsPageInner() {
                   const formattedDate = new Date(txn.date_time).toLocaleString();
 
                   return (
-                    <div key={txn.id} className="rounded-lg border bg-card p-3">
+                    <Link
+                      key={txn.id}
+                      href={`/transactions/${txn.id}`}
+                      className="block rounded-lg border bg-card p-3 transition-colors hover:bg-muted/40"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <Link
-                            href={`/transactions/${txn.id}`}
-                            className="text-xs text-muted-foreground hover:underline"
-                          >
-                            {formattedDate}
-                          </Link>
+                          <p className="text-xs text-muted-foreground">{formattedDate}</p>
                           <p className="mt-1 text-sm font-medium">
                             {transactionTypeLabel(txn.type, m.transactionTypes)}
                           </p>
@@ -711,7 +716,7 @@ function TransactionsPageInner() {
                           {txn.details || m.common.na}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -814,11 +819,21 @@ function TransactionsPageInner() {
                       const formattedDate = new Date(txn.date_time).toLocaleString();
 
                       return (
-                        <tr key={txn.id} className="hover:bg-muted/40">
+                        <tr
+                          key={txn.id}
+                          className="cursor-pointer hover:bg-muted/40"
+                          onClick={() => router.push(`/transactions/${txn.id}`)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              router.push(`/transactions/${txn.id}`);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="link"
+                        >
                           <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
-                            <Link href={`/transactions/${txn.id}`} className="hover:underline">
-                              {formattedDate}
-                            </Link>
+                            {formattedDate}
                           </td>
                           <td className="whitespace-nowrap px-3 py-2 text-xs font-medium">
                             {transactionTypeLabel(txn.type, m.transactionTypes)}

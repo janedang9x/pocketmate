@@ -214,113 +214,128 @@ export default function DashboardPage() {
 
       {/* Summary Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{d.totalBalance}</CardTitle>
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
-              <Wallet className="h-5 w-5 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-3xl font-bold">--</div>
-            ) : error ? (
-              <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
-            ) : accounts.length === 0 ? (
-              <div className="text-3xl font-bold">0 VND</div>
-            ) : (
-              <>
-                <div className="text-3xl font-bold">
-                  {totalBalanceVnd === null ? "--" : formatCurrency(totalBalanceVnd, "VND")}
+        <Link href="/accounts" className="group block rounded-xl">
+          <Card className="shadow-sm transition-shadow group-hover:shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{d.totalBalance}</CardTitle>
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-white" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-3xl font-bold">--</div>
+              ) : error ? (
+                <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
+              ) : accounts.length === 0 ? (
+                <div className="text-3xl font-bold">0 VND</div>
+              ) : (
+                <>
+                  <div className="text-3xl font-bold">
+                    {totalBalanceVnd === null ? "--" : formatCurrency(totalBalanceVnd, "VND")}
+                  </div>
+                  {balancesByCurrency.size > 1 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {m.common.multiCurrency}: {Array.from(balancesByCurrency.entries())
+                        .map(([curr, bal]) => formatCurrency(bal, curr))
+                        .join(", ")}
+                    </p>
+                  )}
+                </>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">{d.acrossAccounts}</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/reports/income" className="group block rounded-xl">
+          <Card className="shadow-sm transition-shadow group-hover:shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{d.monthlyIncome}</CardTitle>
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-white" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-3xl font-bold">--</div>
+              ) : error ? (
+                <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
+              ) : (
+                <div className="text-3xl font-bold text-blue-600">
+                  {formatCurrency(monthlyIncome, "VND")}
                 </div>
-                {balancesByCurrency.size > 1 && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {m.common.multiCurrency}: {Array.from(balancesByCurrency.entries())
-                      .map(([curr, bal]) => formatCurrency(bal, curr))
-                      .join(", ")}
-                  </p>
-                )}
-              </>
-            )}
-            <p className="text-xs text-muted-foreground mt-2">{d.acrossAccounts}</p>
-          </CardContent>
-        </Card>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                {data ? `${data.startDate} ${m.common.to} ${data.endDate}` : d.thisMonth}
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{d.monthlyIncome}</CardTitle>
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-3xl font-bold">--</div>
-            ) : error ? (
-              <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
-            ) : (
-              <div className="text-3xl font-bold text-blue-600">
-                {formatCurrency(monthlyIncome, "VND")}
+        <Link href="/reports/expense" className="group block rounded-xl">
+          <Card className="shadow-sm transition-shadow group-hover:shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{d.monthlyExpense}</CardTitle>
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                <TrendingDown className="h-5 w-5 text-white" />
               </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-2">
-              {data ? `${data.startDate} ${m.common.to} ${data.endDate}` : d.thisMonth}
-            </p>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-3xl font-bold">--</div>
+              ) : error ? (
+                <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
+              ) : (
+                <div className="text-3xl font-bold text-orange-600">
+                  {formatCurrency(monthlyExpense, "VND")}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                {data ? `${data.startDate} ${m.common.to} ${data.endDate}` : d.thisMonth}
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{d.monthlyExpense}</CardTitle>
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-              <TrendingDown className="h-5 w-5 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-3xl font-bold">--</div>
-            ) : error ? (
-              <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
-            ) : (
-              <div className="text-3xl font-bold text-orange-600">
-                {formatCurrency(monthlyExpense, "VND")}
+        <Link href="/reports/comparison" className="group block rounded-xl">
+          <Card className="shadow-sm transition-shadow group-hover:shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{d.netSavings}</CardTitle>
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center">
+                <PiggyBank className="h-5 w-5 text-white" />
               </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-2">
-              {data ? `${data.startDate} ${m.common.to} ${data.endDate}` : d.thisMonth}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{d.netSavings}</CardTitle>
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center">
-              <PiggyBank className="h-5 w-5 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-3xl font-bold">--</div>
-            ) : error ? (
-              <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
-            ) : (
-              <div
-                className={`text-3xl font-bold ${
-                  monthlyNetSavings >= 0 ? "text-emerald-600" : "text-destructive"
-                }`}
-              >
-                {formatCurrency(monthlyNetSavings, "VND")}
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-2">{d.incomeMinusExpense}</p>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-3xl font-bold">--</div>
+              ) : error ? (
+                <div className="text-3xl font-bold text-destructive">{m.common.error}</div>
+              ) : (
+                <div
+                  className={`text-3xl font-bold ${
+                    monthlyNetSavings >= 0 ? "text-emerald-600" : "text-destructive"
+                  }`}
+                >
+                  {formatCurrency(monthlyNetSavings, "VND")}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">{d.incomeMinusExpense}</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <CategoryBreakdown
         title={d.topExpenseTitle}
         description={d.topExpenseDesc}
+        headerAction={
+          <Button variant="ghost" size="sm" asChild className="gap-2">
+            <Link href="/reports/expense">
+              {d.viewDetails} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        }
         items={topCategoryItems}
         formatAmount={(value) => formatCurrency(value, "VND")}
         listMaxHeight="220px"
@@ -462,14 +477,17 @@ export default function DashboardPage() {
                 <span className="text-muted-foreground">{d.oneUsd}</span>
                 <span className="font-semibold">{formatCurrency(exchangeRates.usdToVnd, "VND")}</span>
               </p>
+              <p className="text-xs text-muted-foreground">
+                {m.common.updated}:{" "}
+                {format(parseISO(exchangeRates.usdFetchedAt), "MMM d, yyyy HH:mm", { locale: df })}
+              </p>
               <p className="text-sm">
                 <span className="text-muted-foreground">{d.oneMace}</span>
                 <span className="font-semibold">{formatCurrency(exchangeRates.maceToVnd, "VND")}</span>
               </p>
               <p className="text-xs text-muted-foreground">
                 {m.common.updated}:{" "}
-                {format(parseISO(exchangeRates.fetchedAt), "MMM d, yyyy HH:mm", { locale: df })} (
-                {exchangeRates.source})
+                {format(parseISO(exchangeRates.maceFetchedAt), "MMM d, yyyy HH:mm", { locale: df })}
               </p>
             </div>
           ) : (

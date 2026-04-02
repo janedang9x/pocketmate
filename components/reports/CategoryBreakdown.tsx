@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ export interface CategoryBreakdownItem {
 export interface CategoryBreakdownProps {
   title?: string;
   description?: string;
+  headerAction?: ReactNode;
   items: CategoryBreakdownItem[];
   /** Show pie chart when there is at least one row */
   showChart?: boolean;
@@ -40,6 +42,7 @@ export interface CategoryBreakdownProps {
 export function CategoryBreakdown({
   title = "By category",
   description,
+  headerAction,
   items,
   showChart = true,
   showList = true,
@@ -57,9 +60,12 @@ export function CategoryBreakdown({
 
   return (
     <Card className={cn(className)}>
-      <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
-        {description ? <CardDescription>{description}</CardDescription> : null}
+      <CardHeader className="flex flex-row items-start justify-between gap-3">
+        <div className="space-y-1">
+          <CardTitle className="text-lg">{title}</CardTitle>
+          {description ? <CardDescription>{description}</CardDescription> : null}
+        </div>
+        {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
       </CardHeader>
       <CardContent className="space-y-6">
         {showChart && items.length > 0 ? (

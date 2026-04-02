@@ -233,6 +233,7 @@ export const catalogEn = {
     incomeMinusExpense: "Income - expense (this month)",
     topExpenseTitle: "Top expense categories",
     topExpenseDesc: "Highest spending categories this month",
+    viewDetails: "View details",
     yourAccounts: "Your Accounts",
     yourAccountsDesc: "Top accounts by balance",
     viewAll: "View All",

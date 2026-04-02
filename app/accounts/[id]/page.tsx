@@ -145,33 +145,35 @@ export default function AccountDetailPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AccountTypeIcon type={account.type} size={24} />
-              <span className="text-sm font-medium text-muted-foreground">{account.type}</span>
+      <Link href={`/transactions?accountId=${id}`} className="block">
+        <Card className="transition-colors hover:bg-muted/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AccountTypeIcon type={account.type} size={24} />
+                <span className="text-sm font-medium text-muted-foreground">{account.type}</span>
+              </div>
+              <span className="rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
+                {getCurrencyLabel(account.currency as Currency)}
+              </span>
             </div>
-            <span className="rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
-              {getCurrencyLabel(account.currency as Currency)}
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Current balance</span>
-            <CurrencyDisplay
-              amount={account.balance}
-              currency={account.currency as Currency}
-              className="text-2xl font-semibold"
-            />
-          </div>
-          <div className="flex items-center justify-between border-t pt-4">
-            <span className="text-sm text-muted-foreground">Transactions</span>
-            <span className="font-medium">{account.transactionCount}</span>
-          </div>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Current balance</span>
+              <CurrencyDisplay
+                amount={account.balance}
+                currency={account.currency as Currency}
+                className="text-2xl font-semibold"
+              />
+            </div>
+            <div className="flex items-center justify-between border-t pt-4">
+              <span className="text-sm text-muted-foreground">Transactions</span>
+              <span className="font-medium">{account.transactionCount}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>

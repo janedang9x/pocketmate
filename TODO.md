@@ -565,6 +565,8 @@ _Will be detailed when Phase 4 is complete_
 ### Maintenance Updates
 
 - 2026-04-01: Fixed mobile form UX issue where page scrolling could get blocked while an input was focused by making app content use an internal scroll container in `MainLayout`.
+- 2026-04-02: Improved dashboard UX by adding clickable summary cards to Accounts/Reports, adding a "View details" action in Top expense categories, and showing separate USD/mace last live-update timestamps in the exchange-rate widget.
+- 2026-04-02: Updated navigation UX by linking Account details info card to pre-filtered Transactions, making transaction list items fully clickable to open details, default-collapsing report filters, and scaling Expense over time Y-axis to 1,000 VND units.
 
 ### Tech Stack Confirmations
 

@@ -176,13 +176,12 @@ export default function NewTransactionPage() {
 
   const {
     data: counterpartiesData,
-    isLoading: isLoadingCounterparties,
     error: counterpartiesError,
   } = useQuery<CounterpartiesResponse>({
     queryKey: ["counterparties"],
     queryFn: async () => {
       const token = localStorage.getItem("pm_token");
-      const res = await fetch("/api/counterparties", {
+      const res = await fetch("/api/counterparties?includeCounts=false", {
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
         },
@@ -218,6 +217,7 @@ export default function NewTransactionPage() {
 
   const { data: expenseUsageData } = useQuery<TransactionsResponse>({
     queryKey: ["transactions", "expense-usage-categories"],
+    enabled: accountsData?.success === true && accountsData.data.accounts.length > 0,
     queryFn: async () => {
       const token = localStorage.getItem("pm_token");
       const res = await fetch("/api/transactions?type=Expense&page=1&limit=200", {
@@ -276,8 +276,7 @@ export default function NewTransactionPage() {
     await createMutation.mutateAsync(data);
   }
 
-  const isLoading =
-    isLoadingAccounts || isLoadingExpenseCategories || isLoadingIncomeCategories || isLoadingCounterparties;
+  const isLoading = isLoadingAccounts || isLoadingExpenseCategories || isLoadingIncomeCategories;
 
   const loadError = accountsError || expenseCategoriesError || incomeCategoriesError || counterpartiesError;
 

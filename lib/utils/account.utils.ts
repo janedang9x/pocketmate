@@ -74,14 +74,61 @@ export async function calculateAccountBalances(
   accessToken?: string,
 ): Promise<Map<string, number>> {
   const balanceMap = new Map<string, number>();
+  for (const account of accounts) {
+    balanceMap.set(account.id, 0);
+  }
 
-  // Calculate balances in parallel
-  await Promise.all(
-    accounts.map(async (account) => {
-      const balance = await calculateAccountBalance(account.id, userId, accessToken);
-      balanceMap.set(account.id, balance);
-    }),
-  );
+  if (accounts.length === 0) {
+    return balanceMap;
+  }
+
+  const accountIds = new Set(accounts.map((account) => account.id));
+  const supabase = createSupabaseServerClient({ accessToken });
+  const { data: transactions, error } = await supabase
+    .from("transaction")
+    .select("type, from_account_id, to_account_id, amount")
+    .eq("user_id", userId)
+    .or(
+      `from_account_id.in.(${accounts.map((account) => account.id).join(",")}),to_account_id.in.(${accounts
+        .map((account) => account.id)
+        .join(",")})`,
+    );
+
+  if (error || !transactions) {
+    console.error("Error calculating account balances:", error);
+    return balanceMap;
+  }
+
+  for (const transaction of transactions) {
+    const amount = Number(transaction.amount);
+    if (!Number.isFinite(amount)) continue;
+
+    if (
+      (transaction.type === "Expense" ||
+        transaction.type === "Transfer" ||
+        transaction.type === "Borrow") &&
+      transaction.from_account_id &&
+      accountIds.has(transaction.from_account_id)
+    ) {
+      balanceMap.set(
+        transaction.from_account_id,
+        (balanceMap.get(transaction.from_account_id) ?? 0) - amount,
+      );
+    }
+
+    if (
+      (transaction.type === "Income" ||
+        transaction.type === "Transfer" ||
+        transaction.type === "Borrow") &&
+      transaction.to_account_id &&
+      accountIds.has(transaction.to_account_id)
+    ) {
+      balanceMap.set(
+        transaction.to_account_id,
+        (balanceMap.get(transaction.to_account_id) ?? 0) + amount,
+      );
+    }
+  }
 
   return balanceMap;
 }

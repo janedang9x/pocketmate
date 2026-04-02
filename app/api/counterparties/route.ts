@@ -16,6 +16,8 @@ type CounterpartyRow = Database["public"]["Tables"]["counterparty"]["Row"];
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequest(req);
+    const { searchParams } = new URL(req.url);
+    const includeCounts = searchParams.get("includeCounts") !== "false";
 
     const accessToken =
       req.cookies.get("pm_access_token")?.value ||
@@ -38,6 +40,10 @@ export async function GET(req: NextRequest) {
     }
 
     const typedCounterparties = counterparties as CounterpartyRow[];
+
+    if (!includeCounts) {
+      return jsonSuccess({ counterparties: typedCounterparties });
+    }
 
     // Get transaction count for each counterparty
     const counterpartiesWithCount = await Promise.all(

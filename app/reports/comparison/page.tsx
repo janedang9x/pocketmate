@@ -132,7 +132,7 @@ export default function ComparisonReportPage() {
         </div>
       </div>
 
-      <FilterPanel title="Filters" description="Date range and chart grouping">
+      <FilterPanel title="Filters" description="Date range and chart grouping" defaultCollapsed>
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
             <Label className="text-xs text-muted-foreground">Date range</Label>
