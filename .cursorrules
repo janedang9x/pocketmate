@@ -14,7 +14,7 @@ You are working on **PocketMate**, a personal/family financial management web ap
 ## Reference Documents
 
 - `TODO.md` - Current development priorities (CHECK THIS FIRST)
-- `docs/requirements.md` - Full requirements specification
+- `docs/specifications.md` - Full requirements specification
 - `docs/database-schema.md` - Database structure and SQL
 - `docs/api-design.md` - API endpoints and response formats
 

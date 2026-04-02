@@ -12,9 +12,11 @@ import { createSupabaseServerClient } from "@/lib/supabase";
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const shouldRedirectRootToDashboard = pathname === "/";
   const redirectToLogin = () => {
     const loginUrl = new URL("/auth/login", req.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    const redirectPath = pathname === "/" ? "/dashboard" : pathname;
+    loginUrl.searchParams.set("redirect", redirectPath);
     return NextResponse.redirect(loginUrl);
   };
 
@@ -27,11 +29,6 @@ export async function middleware(req: NextRequest) {
 
   // Allow public access to auth pages and auth API routes
   if (pathname.startsWith("/auth/") || pathname.startsWith("/api/auth/")) {
-    return NextResponse.next();
-  }
-
-  // Allow public access to root page (will redirect to login if needed)
-  if (pathname === "/") {
     return NextResponse.next();
   }
 
@@ -74,7 +71,9 @@ export async function middleware(req: NextRequest) {
         return redirectToLogin();
       }
 
-      const response = NextResponse.next();
+      const response = shouldRedirectRootToDashboard
+        ? NextResponse.redirect(new URL("/dashboard", req.url))
+        : NextResponse.next();
       response.cookies.set(
         "pm_access_token",
         refreshedSession.access_token,
@@ -107,7 +106,9 @@ export async function middleware(req: NextRequest) {
         return redirectToLogin();
       }
 
-      const response = NextResponse.next();
+      const response = shouldRedirectRootToDashboard
+        ? NextResponse.redirect(new URL("/dashboard", req.url))
+        : NextResponse.next();
       response.cookies.set(
         "pm_access_token",
         refreshedSession.access_token,
@@ -122,6 +123,10 @@ export async function middleware(req: NextRequest) {
     }
 
     // User is authenticated, allow request to proceed
+    if (shouldRedirectRootToDashboard) {
+      // FR-AUTH-002: redirect authenticated users to dashboard
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
     return NextResponse.next();
   } catch (error) {
     // On auth errors, attempt refresh before redirecting.
@@ -132,7 +137,9 @@ export async function middleware(req: NextRequest) {
         return redirectToLogin();
       }
 
-      const response = NextResponse.next();
+      const response = shouldRedirectRootToDashboard
+        ? NextResponse.redirect(new URL("/dashboard", req.url))
+        : NextResponse.next();
       response.cookies.set(
         "pm_access_token",
         refreshedSession.access_token,

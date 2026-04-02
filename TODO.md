@@ -96,6 +96,7 @@
   - [x] Create `/middleware.ts` for route protection
   - [x] Protect all routes except `/auth/*` and `/api/auth/*`
   - [x] Redirect unauthenticated users to login
+  - [x] Auto-redirect authenticated users from `/` to `/dashboard`
   - [x] Refresh expired access tokens using refresh token cookies for persistent sessions
   - [x] Create auth state management
 
