@@ -25,7 +25,10 @@ interface SearchableSelectProps {
   emptyText?: string;
   /** Sticky header (e.g. create-new control). */
   header?: React.ReactNode;
-  /** Use full-screen picker dialog on mobile widths. */
+  /**
+   * Full-screen dialog on narrow viewports (same implementation for category, account,
+   * and counterparty pickers). Layout uses flex + min-h-0 so the option list scrolls.
+   */
   mobileFullScreen?: boolean;
   /** Optional title shown in mobile full-screen picker. */
   mobileTitle?: string;
@@ -118,9 +121,14 @@ export function SearchableSelect({
   }, [mobileFullScreen, mobileMaxWidth, mobileRequireTouch]);
 
   const pickerContent = (
-    <div className={cn("flex flex-col", isMobileDialogMode && "h-full max-h-full")}>
+    <div
+      className={cn(
+        "flex flex-col",
+        isMobileDialogMode && "min-h-0 flex-1 overflow-hidden",
+      )}
+    >
       {isMobileDialogMode ? (
-        <div className="flex items-center gap-2 border-b border-border/80 px-2 py-2">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border/80 px-2 py-2">
           <Button
             type="button"
             variant="ghost"
@@ -135,11 +143,16 @@ export function SearchableSelect({
         </div>
       ) : null}
       {header ? (
-        <div className="sticky top-0 z-10 border-b border-border/80 bg-popover p-1 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.12)]">
+        <div
+          className={cn(
+            "z-10 border-b border-border/80 bg-popover p-1 shadow-[0_4px_8px_-4px_rgba(0,0,0,0.12)]",
+            isMobileDialogMode ? "shrink-0" : "sticky top-0",
+          )}
+        >
           {header}
         </div>
       ) : null}
-      <div className="border-b border-border/80 p-2">
+      <div className={cn("border-b border-border/80 p-2", isMobileDialogMode && "shrink-0")}>
         <Input
           placeholder={searchPlaceholder}
           value={query}
@@ -155,7 +168,7 @@ export function SearchableSelect({
         className={cn(
           "overflow-y-auto p-1",
           isMobileDialogMode
-            ? "flex-1"
+            ? "min-h-0 flex-1 touch-pan-y [-webkit-overflow-scrolling:touch]"
             : "max-h-[min(240px,var(--radix-popover-content-available-height,240px))]",
         )}
         role="listbox"
@@ -219,7 +232,7 @@ export function SearchableSelect({
           <ChevronRight className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
         </button>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="inset-0 h-dvh w-screen max-w-none translate-x-0 translate-y-0 rounded-none p-0 data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-100 data-[state=open]:zoom-in-100 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-right-full">
+          <DialogContent className="inset-0 flex h-dvh min-h-0 w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none p-0 data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-100 data-[state=open]:zoom-in-100 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-right-full">
             <DialogTitle className="sr-only">{mobileTitle}</DialogTitle>
             {pickerContent}
           </DialogContent>

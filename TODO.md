@@ -561,6 +561,10 @@ _Will be detailed when Phase 4 is complete_
 
 ## 📝 Notes & Decisions
 
+### Maintenance Updates
+
+- 2026-04-01: Fixed mobile form UX issue where page scrolling could get blocked while an input was focused by making app content use an internal scroll container in `MainLayout`.
+
 ### Tech Stack Confirmations
 
 - ✅ Next.js 14+ with App Router

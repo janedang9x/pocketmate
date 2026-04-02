@@ -91,7 +91,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "hsl(var(--main-bg))" }}>
+    <div className="flex min-h-dvh overflow-x-hidden lg:min-h-screen" style={{ backgroundColor: "hsl(var(--main-bg))" }}>
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -165,7 +165,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col lg:pl-64">
+      <div className="flex min-h-0 flex-1 flex-col lg:pl-64">
         {/* Header */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 lg:px-6 shadow-sm">
           <Button
@@ -196,7 +196,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-6" style={{ backgroundColor: "hsl(var(--main-bg))" }}>{children}</main>
+        <main
+          className="flex-1 overflow-y-auto touch-pan-y p-4 [-webkit-overflow-scrolling:touch] lg:p-6"
+          style={{ backgroundColor: "hsl(var(--main-bg))" }}
+        >
+          {children}
+        </main>
 
         {/* Global primary action */}
         {shouldShowFab && (
