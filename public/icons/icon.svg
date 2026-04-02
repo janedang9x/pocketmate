@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#0f172a"/>
+  <!-- Wallet body -->
+  <rect x="80" y="160" width="352" height="240" rx="24" fill="none" stroke="#10b981" stroke-width="24"/>
+  <!-- Wallet flap -->
+  <path d="M80 200 Q80 160 120 160 L392 160 Q432 160 432 200" fill="none" stroke="#10b981" stroke-width="24"/>
+  <!-- Coin slot -->
+  <rect x="320" y="220" width="96" height="80" rx="16" fill="#10b981" opacity="0.2" stroke="#10b981" stroke-width="4"/>
+  <circle cx="368" cy="260" r="16" fill="#10b981"/>
+  <!-- Dollar lines -->
+  <line x1="120" y1="260" x2="280" y2="260" stroke="#10b981" stroke-width="16" stroke-linecap="round"/>
+  <line x1="120" y1="300" x2="220" y2="300" stroke="#10b981" stroke-width="16" stroke-linecap="round" opacity="0.6"/>
+</svg>

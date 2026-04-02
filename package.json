@@ -10,6 +10,7 @@
     "format": "prettier --check ."
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "^5.2.2",
     "@netlify/plugin-nextjs": "^5.15.9",
     "@radix-ui/react-alert-dialog": "^1.1.15",

@@ -19,6 +19,18 @@ export const metadata: Metadata = {
   title: "PocketMate | Personal Finance",
   description:
     "PocketMate helps you manage personal and family finances with Supabase-backed auth and secure data.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PocketMate",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -28,6 +40,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon.svg" />
+        <meta name="theme-color" content="#10b981" />
+      </head>
       <body
         className={cn(
           "min-h-screen bg-background text-foreground antialiased",
