@@ -12,7 +12,7 @@ export interface VndExchangeRates {
 
 let latestRatesCache: VndExchangeRates | null = null;
 
-function isFresh(cache: VndExchangeRates | null): cache is VndExchangeRates {
+function isFresh(cache: VndExchangeRates | null): boolean {
   if (!cache) return false;
   return (
     Date.now() - new Date(cache.usdFetchedAt).getTime() < EXCHANGE_RATE_TTL_MS &&
@@ -54,8 +54,9 @@ async function fetchSjcBuyVndFromProvider(baseUrl: string): Promise<number> {
  * Falls back to the last cached rate when providers fail.
  */
 export async function getLatestVndExchangeRates(): Promise<VndExchangeRates> {
-  if (isFresh(latestRatesCache)) {
-    return { ...latestRatesCache };
+  const initialCache = latestRatesCache;
+  if (initialCache && isFresh(initialCache)) {
+    return { ...initialCache };
   }
 
   const nowIso = new Date().toISOString();
